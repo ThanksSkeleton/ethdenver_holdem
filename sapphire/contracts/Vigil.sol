@@ -2,30 +2,79 @@
 pragma solidity ^0.8.9;
 
 import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
-import "hardhat/console.sol";
-
-
 
 contract Vigil {
 
     // Selecting Cards
     // Generate https://api.docs.oasis.io/sol/sapphire-contracts/index.html
-    // 
 
 
-  function generateNumber() public view returns (uint) {
-    return uint(bytes32(Sapphire.randomBytes(32, "")));
-  }
+    // player => tableId => handNum => PlayerCardHashes
+    mapping(address => mapping(uint => mapping(uint => PlayerCards))) private playerCards;
+    // current community cards (Private)
+
+    // tableId => int8[] community cards
+    // We generate all at once and then reveal when needed
+    mapping(uint => uint[]) private communityCards_Private;
+    mapping(uint => uint[]) public communityCards_Public;
+
+
+    struct PlayerCards {
+        uint8 card1;
+        uint8 card2;
+    }
+
+    // // Encrypted Get Psudeocode and Notes
+
+    // // How do do without metamask popups
+    // function get_secret(address user,  ESDCA_Signature signature) view returns (uint[] memory) 
+    // {
+    //     // Confirm that user is the signer
+    //     return communityCards_Private[1]
+    // }
+
+    // //
+    // function get_secret() view return {
+    //     // Confirm that user is the signer
+    //     if message.sender is correct {
+
+    //     }
+    //     return communityCards_Private[1]
+    // }
+    // }
+
+    function populate_cards(uint table_id, uint handNum, address[] memory players) public {
+        uint[] memory cards = generateCards(players.length);
+        for (uint player_index = 0; player_index < players.length; player_index++) {
+            uint hole_1_index = player_index * 2; 
+            uint hole_2_index = player_index * 2 + 1; 
+            playerCards[players[player_index]][table_id][handNum] = PlayerCards(uint8(cards[hole_1_index]), uint8(cards[hole_2_index]));
+        }
+        // Assuming communityCards_Private is an array of arrays, correct handling would depend on its declaration
+        for (uint community_cards_subindex = 0; community_cards_subindex < 5; community_cards_subindex++) {
+            uint community_cards_index = community_cards_subindex + 2 * players.length;
+            // Assuming each table_id corresponds to an array of community cards
+            communityCards_Private[table_id].push(cards[community_cards_index]);
+        }
+    }
+
+    function reveal_community_cards(uint table_id, uint[] memory whichcards) public 
+    {
+        for (uint community_card_index_index = 0;  community_card_index_index < whichcards.length; community_card_index_index++) 
+        {
+            communityCards_Public[table_id].push(communityCards_Private[table_id][whichcards[community_card_index_index]]);
+        }
+    }
 
     function generateCards(uint howMany) public view returns (uint[] memory) {
         uint[] memory toReturn = new uint[](howMany);
-        // uint candidate = uint8(Sapphire.randomBytes(1, "")[0])/4;
-        // toReturn[0] = candidate;
         uint count = 0;
         
+        // TODO - THIS WHILE LOOP IS A LITTLE UGLY. 
+        // BUT GENERATING AND REJECTING WAS EASY AND OBVIOUSLY CORRECT
+        // GOT A BETTER WAY? LET'S DO IT
         while (count < howMany) {
             uint candidate = uint8(Sapphire.randomBytes(1, "")[0]);
-            console.log(candidate);
             if (candidate < 52 && !contains(toReturn, candidate, count)) {
                 toReturn[count] = candidate;
                 count++;
@@ -42,14 +91,6 @@ contract Vigil {
             }
         }
         return false;
-    }
-
-    function toUint(bytes memory b) private pure returns (uint256){
-        uint256 number;
-        for(uint i=0;i<6;i++){
-            number = number + uint8(b[i])*(2**(8*(5-i)));
-        }
-        return number;
     }
 
     struct SecretMetadata {
