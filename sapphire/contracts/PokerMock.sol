@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Poker is Ownable {
+contract PokerMock is Ownable {
 
     enum TableState {
         Active,
@@ -52,8 +52,6 @@ contract Poker is Ownable {
         uint8 card2;
     }
 
-    address public immutable EVALUATOR7;
-
     uint public totalTables;
     // id => Table
     mapping(uint => Table) public tables;
@@ -67,8 +65,7 @@ contract Poker is Ownable {
     // tableId => int8[] community cards
     mapping(uint => uint8[]) public communityCards;
 
-    constructor(address _evaluator7) Ownable(msg.sender) {
-        EVALUATOR7 = _evaluator7;
+    constructor() Ownable(msg.sender) {
     }
 
     function withdrawChips(uint _amount, uint _tableId) external {
