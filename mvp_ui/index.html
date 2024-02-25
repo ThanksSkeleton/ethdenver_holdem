@@ -1,0 +1,89 @@
+---
+---
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Hold'em</title>
+    <meta charset="utf-8">
+    <base href="{{ site.github.url }}/" target="_self"></base>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://c0f4f41c-2f55-4863-921b-sdk-docs.github.io/cdn/metamask-sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@3.1.5/dist/vue-router.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.5/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.5/dist/axios.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="wallet.js"></script>
+    <link rel="shortcut icon" href="favicon.png" title="Favicon"></link>
+</head>
+
+<body class="poker">
+    {% include_relative vue/table.vue %}
+    {% include_relative vue/new_game.vue %}
+
+    <div id="app">
+        <transition>
+            <keep-alive>
+                <router-view></router-view>
+            </keep-alive>
+        </transition>
+    </div>
+
+
+    <script>
+
+        const navigation = [
+            { name: 'Product', href: '#' },
+            { name: 'Features', href: '#' },
+            { name: 'Marketplace', href: '#' },
+            { name: 'Company', href: '#' },
+        ]
+
+        const mobileMenuOpen = false;
+        let app = {};
+
+        var routes = [{
+            name: 'New Game',
+            path: '/',
+            component: NewGameComponent
+        },
+        {
+            name: 'Table',
+            path: '/table/',
+            component: TableComponent
+        }];
+
+        const router = new VueRouter({
+            routes,
+            base: '/',
+            duplicateNavigationPolicy: 'reload'
+        });
+
+        router.beforeEach((to, from, next) => {
+            if (Object.values(to.params).length) {
+                for (i = 0; i < routes.length; i++) {
+                    let route = routes[i];
+                    if (route.name == to.name) {
+                        route.params = to.params
+                        if (app && app.$set) app.$set(app.routes, i, route)
+                        else routes[i] = route
+                    }
+                }
+            }
+            next()
+        })
+        app = new Vue({
+            data: {
+                routes,
+                initial: 0,
+                connected: 0,
+                ticker: 1,
+            },
+            router,
+            delimiters: ["<%", "%>"]
+        })
+        app.$mount('#app')
+    </script>
+</body>
+</html>
