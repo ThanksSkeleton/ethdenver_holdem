@@ -6,6 +6,7 @@
     "hardhat": "^2.20.1"
   },
   "dependencies": {
-    "@oasisprotocol/sapphire-contracts": "^0.2.7"
+    "@oasisprotocol/sapphire-contracts": "^0.2.7",
+    "@openzeppelin/contracts": "^5.0.1"
   }
 }
