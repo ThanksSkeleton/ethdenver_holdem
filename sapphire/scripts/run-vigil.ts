@@ -7,35 +7,17 @@ async function main() {
   const vigil = await Vigil.deploy();
   console.log('Vigil deployed to:', await vigil.getAddress());
 
-  const tx = await vigil.createSecret(
-    'ingredient',
-    30 /* seconds */,
-    Buffer.from('brussels sprouts'),
-  );
-  console.log('Storing a secret in', tx.hash);
-  await tx.wait();
-  try {
-    console.log('Checking the secret');
-    await vigil.connect(ethers.provider).revealSecret.staticCall(0);
-    console.log('Uh oh. The secret was available!');
-    process.exit(1);
-  } catch (e: any) {
-    console.log('failed to fetch secret:', e.message);
-  }
-  console.log('Waiting...');
+//   const random_1 = await (await vigil.generateNumber());
+//   console.log('First Random:',random_1)
+//   const random_2 = await (await vigil.generateNumber());
+//   console.log('Second Random:', random_2)
 
-  // Manually generate some transactions to increment local Docker
-  // container block
-  if ((await ethers.provider.getNetwork()).name == 'sapphire_localnet') {
-    await generateTraffic(10);
-  }
+    const cards = await (await vigil.generateCards(6));
+    console.log('cards: ', cards)
 
-  await new Promise((resolve) => setTimeout(resolve, 30_000));
-  console.log('Checking the secret again');
-  await (await vigil.revealSecret(0)).wait(); // Reveal the secret.
-  const secret = await vigil.revealSecret.staticCallResult(0); // Get the value.
-  console.log('The secret ingredient is', Buffer.from(secret[0].slice(2), 'hex').toString());
 }
+
+
 
 async function generateTraffic(n: number) {
   const signer = await ethers.provider.getSigner();

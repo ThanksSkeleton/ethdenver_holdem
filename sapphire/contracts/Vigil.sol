@@ -1,7 +1,57 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
+import "hardhat/console.sol";
+
+
+
 contract Vigil {
+
+    // Selecting Cards
+    // Generate https://api.docs.oasis.io/sol/sapphire-contracts/index.html
+    // 
+
+
+  function generateNumber() public view returns (uint) {
+    return uint(bytes32(Sapphire.randomBytes(32, "")));
+  }
+
+    function generateCards(uint howMany) public view returns (uint[] memory) {
+        uint[] memory toReturn = new uint[](howMany);
+        // uint candidate = uint8(Sapphire.randomBytes(1, "")[0])/4;
+        // toReturn[0] = candidate;
+        uint count = 0;
+        
+        while (count < howMany) {
+            uint candidate = uint8(Sapphire.randomBytes(1, "")[0]);
+            console.log(candidate);
+            if (candidate < 52 && !contains(toReturn, candidate, count)) {
+                toReturn[count] = candidate;
+                count++;
+            }
+        }
+        
+        return toReturn;
+    }
+
+    function contains(uint[] memory array, uint value, uint arrayLength) private pure returns (bool) {
+        for (uint i = 0; i < arrayLength; i++) {
+            if (array[i] == value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function toUint(bytes memory b) private pure returns (uint256){
+        uint256 number;
+        for(uint i=0;i<6;i++){
+            number = number + uint8(b[i])*(2**(8*(5-i)));
+        }
+        return number;
+    }
+
     struct SecretMetadata {
         address creator;
         string name;
