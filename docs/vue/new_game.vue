@@ -1,15 +1,7 @@
 <template id="new_game">
-<div class="rounded-t-lg overflow-hidden border-t border-l border-r border-gray-400 px-3 py-10 flex justify-center">
+<div class="overflow-hidden px-3 py-10 flex justify-around">
   <div class="w-full max-w-xs">
     <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-      <div class="mb-4">
-        <label class="block text-gray-700 text-sm font-bold mb-2" for="table_name">
-          Table Name
-        </label>
-        <input 
-          v-model.trim="table_name"
-          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="table_name" type="text" placeholder="Table name">
-      </div>
       <div class="mb-4">
         <label class="block text-gray-700 text-sm font-bold mb-2" for="player_count">
           Player Count
@@ -35,7 +27,54 @@
         </a>
       </div>
     </form>
-    <div><% totalTables %></div>
+  </div>
+  <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div class="px-4 sm:px-6 lg:px-8">
+      <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+          <h1 class="text-base font-semibold leading-6 text-gray-900">Tables</h1>
+          <p class="mt-2 text-sm text-gray-700">You've got (<% balance %>) FISH tokens that you can play with on any of the open tables.</p>
+        </div>
+      </div>
+      <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead>
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Num</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">State</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Hands</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Current Round</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Buy In</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Max Players</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pot</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Big Blind</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                    <span class="sr-only">Edit</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="table in tables">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"><% table.index %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.state %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.totalHands %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.currentRound %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.buyInAmount %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.maxPlayers %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.pot %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><% table.bigBlind %></td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                    <a href="#" class="text-indigo-600 hover:text-indigo-900">Join Table</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </template>
@@ -50,7 +89,8 @@ var NewGameComponent = Vue.component("NewGame", {
       table_name: "",
       player_count: "4",
       buy_in: "100",
-      totalTables: "loading",
+      balance: "loading",
+      tables: []
     };
   },
   created: async function () {
@@ -66,11 +106,13 @@ var NewGameComponent = Vue.component("NewGame", {
         console.log('request accounts', res);
         this.lastResponse = '';
         await this.add_chain();
+        this.token = await TokenContract(this.provider);
+        this.balance = await this.token.balanceOf(this.account);
         this.contract = await PokerContract(this.provider);
-        this.totalTables = await this.contract.totalTables();
-        for (let i = 0; i < this.totalTables; i++) {
+        let totalTables = await this.contract.totalTables();
+        for (let i = 0; i < totalTables; i++) {
           const table = await this.contract.tables(i);
-          console.log('table', {state: table.state, totalHands: table.totalHands, currentRound: table.currentRound, buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot, bigBlind: table.bigBlind, token: table.token});
+          this.tables.push({index: i, state: table.state, totalHands: table.totalHands, currentRound: table.currentRound, buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot, bigBlind: table.bigBlind, token: table.token});
         }
       } catch (e) {
         console.log('create ERR', e);

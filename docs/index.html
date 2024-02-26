@@ -19,6 +19,7 @@
 <body class="poker" style="background: center / cover no-repeat url('./assets/img/background.webp');">
     {% include_relative vue/table.vue %}
     {% include_relative vue/new_game.vue %}
+    {% include_relative vue/fish_faucet.vue %}
 
     <div id="app">
         <transition>
@@ -45,6 +46,11 @@
             name: 'New Game',
             path: '/',
             component: NewGameComponent
+        },
+        {
+            name: 'FishFaucet',
+            path: '/fish_faucet/',
+            component: FishFaucetComponent
         },
         {
             name: 'Table',
