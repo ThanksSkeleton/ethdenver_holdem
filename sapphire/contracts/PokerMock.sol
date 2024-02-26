@@ -4,12 +4,35 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// PokerMock Flow
+// Create Table()
+// Players Buy In() - (Callable anytime!)
+// START - Table is INACTIVE
+// ADMIN DealCards() (these are hole cards). Transitions Table to ACTIVE
+// PlayHand()
+//      (This will call _finishRound which advances the state machine in the following ways)
+//      1. If everyone else has folded, transfer chips to winner and go back to START
+//      2. If the pot is right and there are further rounds, advance to the next round
+//      2.1 ADMIN is expected to call dealCommunityCards now. But play continues regardless (!!!!)
+//      3. If the pot is right and there are no future rounds, move to Showdown and resolve Showdown
+//      4. Else simply advance player 
+// (Loop Forever)
+
+// Showdown() - Decrypt the player cards and compare hands. Move back to START
+
+// CHRIS'S NOTES about the ORIGINAL PokerMock Flow:
+// The Admin can actually add community cards at any time! Crazy
+// It is not restricted by the state machine. We need to add that
+
+// OUR ACTUAL Flow
+// TODO!
+
 contract PokerMock is Ownable {
 
     enum TableState {
-        Active,
-        Inactive,
-        Showdown
+        Active, 
+        Inactive, // Awaiting Admin to Deal the Hole Cards
+        Showdown 
     }  
     enum PlayerAction {
         Call,
