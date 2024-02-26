@@ -50,7 +50,7 @@ import "./ActualPokerHandProvider.sol";
 
 // Showdown() Reveal all unfolded player's cards and compare hands. Payout and Move back to start 
 
-contract PokerMock is Ownable, ActualPokerHandProvider {
+contract Poker is Ownable, ActualPokerHandProvider {
 
     enum BettingRound 
     {

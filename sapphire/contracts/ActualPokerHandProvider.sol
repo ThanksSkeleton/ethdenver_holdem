@@ -29,7 +29,7 @@ contract ActualPokerHandProvider is PokerHandProvider
             // store the cards secretly on chain
             playerCards[players[player_index]][table_id][handNum] = PlayerCards(hole_1_card, hole_1_card);
 
-            uint salt = salts[players[player_index]][table_id][handNum];
+            uint salt = salts[players[player_index]][table_id];
 
             // encrypt and emit the cards back to the player
             emit HoleEncryptedCards(players[player_index], table_id, handNum, 
