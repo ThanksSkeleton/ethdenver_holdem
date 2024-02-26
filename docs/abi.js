@@ -7,10 +7,6 @@ import("https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm").then((mod) => {
 });
 
 async function PokerContract(provider) {
-    // doCall(web3, pokerMethods[name], POKER, args, callback)
-    // let provider = new ethers.BrowserProvider(window.ethereum); 
-    // const signer = await provider.getSigner();
-
     provider = new ethers.BrowserProvider(window.ethereum);
 
     abi = [
@@ -20,4 +16,14 @@ async function PokerContract(provider) {
     ];
     const signer = await provider.getSigner();
     return new ethers.Contract(POKER, abi, signer);
+}
+
+async function TokenContract(provider) {
+    provider = new ethers.BrowserProvider(window.ethereum);
+
+    abi = [
+        "function balanceOf(address) public view returns (uint256)",
+    ];
+    const signer = await provider.getSigner();
+    return new ethers.Contract(TOKEN, abi, signer);
 }

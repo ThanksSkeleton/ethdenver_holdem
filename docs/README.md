@@ -19,3 +19,13 @@ https://metadata.ens.domains/docs#/paths/~1%7BnetworkName%7D~1avatar~1%7Bname%7D
 
 const POKER = "0x4c4B3671c42c6E780ec5799A1612d8D5305ff6cd";
 const TOKEN = "0x39d61f9540D84D5E6920B06e973CEE19D79FeFbD";
+
+## Token
+https://testnet.explorer.sapphire.oasis.dev/address/0x39d61f9540D84D5E6920B06e973CEE19D79FeFbD/write-contract#address-tabs
+
+
+## Wallets
+
+Dominic : 0xA1Da0F4F20a804E77c7cA9B394AC7E6E64d7e86d
+Chris   : 0x7945b0db8Dda46Fc9C6B58dC7bBff90c45721d90
+Greg    : 0x830Dd5c538c6F4d6e2ff8529A7D3eC97d08B0BFd
