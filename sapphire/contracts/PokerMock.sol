@@ -145,6 +145,12 @@ contract PokerMock is Ownable, ActualPokerHandProvider {
         totalTables += 1;
     }
 
+    /// @dev returns the list of players on a given table 
+    /// @param _tableId the unique id of the table
+    function tablePlayers(uint _tableId) public view returns (address[] memory) {
+        return tables[_tableId].players;
+    }
+
     /// @dev first the players have to call this method to buy in and enter a table
     /// @param _tableId the unique id of the table
     /// @param _amount The amount of tokens to buy in the table. (must be greater than or equal to the minimum table buy in amount)
