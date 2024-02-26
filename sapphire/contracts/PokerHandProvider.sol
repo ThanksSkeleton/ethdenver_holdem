@@ -1,3 +1,6 @@
+pragma solidity ^0.8.9;
+
+// Utility contract that contains the salts, cards, and mappings (with getters)
 contract PokerHandProvider {
        // player address, table, hand, to salt
     mapping(address => mapping(uint => mapping(uint => uint))) internal salts;
@@ -55,13 +58,13 @@ contract PokerHandProvider {
         emit CommunityCardRevealed(table_id, handNum, community_index, communityCards[table_id][handNum].allcards[community_index]);
     }
 
-    function get_player_cards(address player, uint table_id, uint handNum) internal returns (PlayerCards memory)  
-    {
-        return playerCards[player][table_id][handNum];
-    }
+    // function get_player_cards(address player, uint table_id, uint handNum) internal returns (PlayerCards memory)  
+    // {
+    //     return playerCards[player][table_id][handNum];
+    // }
 
-    function get_community_cards(uint table_id, uint handNum) internal returns (CommunityCards memory) 
-    {
-        return communityCards[table_id][handNum];    
-    }
+    // function get_community_cards(uint table_id, uint handNum) internal returns (CommunityCards memory) 
+    // {
+    //     return communityCards[table_id][handNum];    
+    // }
 }

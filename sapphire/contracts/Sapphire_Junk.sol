@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
 
-contract Sapphire_Junk {
+contract Sapphire_Junk is ActualPokerHandProvider {
 
     // Selecting Cards
     // Generate https://api.docs.oasis.io/sol/sapphire-contracts/index.html
@@ -161,7 +161,6 @@ contract Sapphire_Junk {
     {
         return communityCards[table_id][handNum];    
     }
-
 
     function generateCards(uint howMany) public view returns (uint[] memory) {
         uint[] memory toReturn = new uint[](howMany);
