@@ -110,6 +110,9 @@ contract Sapphire_Junk {
         salts[player][table_id][handNum] = salt;
     }   
 
+    // deal all cards, 
+    // secretly store the community cards and the player cards, 
+    // and broadcast the encrypted player cards 
     function populate_cards(uint table_id, uint handNum, address[] memory players) internal {
         uint[] memory cards = generateCards(players.length);
         for (uint player_index = 0; player_index < players.length; player_index++) {
@@ -130,21 +133,35 @@ contract Sapphire_Junk {
                 abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)))
             );
         }
-        // Assuming communityCards_Private is an array of arrays, correct handling would depend on its declaration
-        for (uint community_cards_subindex = 0; community_cards_subindex < 5; community_cards_subindex++) {
-            uint community_cards_index = community_cards_subindex + 2 * players.length;
-            // Assuming each table_id corresponds to an array of community cards
-            communityCards[table_id].push(cards[community_cards_index]);
-        }
+
+        communityCards[table_id][handNum] = CommunityCards 
+        (
+           [ 
+                cards[2 * players.length],
+                cards[2 * players.length+1],
+                cards[2 * players.length+2],
+                cards[2 * players.length+3],
+                cards[2 * players.length+4]
+            ]
+        );
     }
 
-    function reveal_community_cards(uint table_id, uint handNum, uint[] memory communityIndexes) public 
+    // community_index: 0,1,2 = Flop 3 = Fold 4 = River
+    function reveal_community_card(uint table_id, uint handNum, uint community_index) internal
     {
-        for (uint community_card_index_index = 0;  community_card_index_index < communityIndexes.length; community_card_index_index++) 
-        {
-            communityCards[table_id][handNum].allcards[communityIndexes[community_card_index_index]];
-        }
+        emit CommunityCardRevealed(table_id, handNum, community_index, communityCards[table_id][handNum].allcards[community_index]);
     }
+
+    function get_player_cards(address player, uint table_id, uint handNum) internal returns (PlayerCards memory)  
+    {
+        return playerCards[player][table_id][handNum];
+    }
+
+    function get_community_cards(uint table_id, uint handNum) internal returns (CommunityCards memory) 
+    {
+        return communityCards[table_id][handNum];    
+    }
+
 
     function generateCards(uint howMany) public view returns (uint[] memory) {
         uint[] memory toReturn = new uint[](howMany);
