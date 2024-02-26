@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // Each time when a player is expected to make a betting action is a "turn"
 //      On my turn I raised.
 
-
 // PokerMock Flow
 // Create Table()
 // Players Buy In() - (Callable anytime!)
@@ -22,12 +21,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //      (This will call _finishRound which advances the state machine in the following ways)
 //      1. If everyone else has folded, transfer chips to winner and go back to START
 //      2. If the pot is right and there are further rounds, advance to the next round
-//      2.1 ADMIN is expected to call dealCommunityCards now. But play continues regardless (!!!!)
+//          2.1 ADMIN is expected to call dealCommunityCards now. But play continues regardless (!!!!)
 //      3. If the pot is right and there are no future rounds, move to Showdown and resolve Showdown
 //      4. Else simply advance player 
 // (Loop Forever)
 
-// Showdown() - Decrypt the player cards and compare hands. Move back to START
+// Showdown() - Decrypt the unfolded player cards and compare hands. Move back to START
 
 // CHRIS'S NOTES about the ORIGINAL PokerMock Flow:
 // The Admin can actually add community cards at any time! Crazy
@@ -35,9 +34,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // OUR ACTUAL Flow
 // Create Table() (Same)
-// Players BuyIn(). Perform earlier BuyIn(), but also, when Players Is Full,  
+// Players BuyIn(). Perform earlier BuyIn(), 
+//      but also, provide a unique salt that will be used for the hand 
+//      but also, when Players Is Full, determine start the game and send everyone their hole cards
+//          and set the table to active
+// PlayHand()
+//      (This will call _finishRound which advances the state machine in the following ways)
+//      1. If everyone else has folded, transfer chips to winner and go back to START
+//      2. If the pot is right and there are further rounds, advance to the next round
+//          2.1 Contract reveals the next community card as part of the final action of the betting round
+//      3. If the pot is right and there are no future rounds, move to Showdown and resolve Showdown
+//      4. Else simply advance player 
+// (Loop Forever)
 
-
+// Showdown() Reveal all unfolded player's cards and compare hands. Payout and Move back to start 
 
 contract PokerMock is Ownable {
 

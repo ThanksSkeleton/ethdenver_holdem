@@ -28,8 +28,8 @@ contract Vigil {
     );
 
     struct PlayerCards {
-        uint8 card1;
-        uint8 card2;
+        bytes hole1_encrypted;
+        bytes hole2_hashed;
     }
 
     function deoxsys_hello_world() public returns (bytes memory)
@@ -45,9 +45,11 @@ contract Vigil {
 
     function keccak_hello_world() public returns (bytes memory)
     {
+        uint table = 1;
+        uint8 hand_round = 1; // i.e the fifth distict hand that has ever been played at the table
         uint8 card = 32;
         bytes32 secretKey = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-        bytes memory encrypted = abi.encodePacked(keccak256(abi.encodePacked(secretKey, card)));
+        bytes memory encrypted = abi.encodePacked(keccak256(abi.encodePacked(secretKey, table, hand_round, card)));
         emit Keccak_Encrypt( encrypted);
         return encrypted;
     }
