@@ -65,9 +65,12 @@ contract PokerMock is Ownable {
     // tableId => int8[] community cards
     mapping(uint => uint8[]) public communityCards;
 
-    constructor() Ownable(msg.sender) {
+    constructor() Ownable(msg.sender) 
+    {
     }
 
+    // Leave the table with some of your chips
+    // Can be called at any time!
     function withdrawChips(uint _amount, uint _tableId) external {
         require(chips[msg.sender][_tableId] >= _amount, "Not enough balance");
         chips[msg.sender][_tableId] -= _amount;
@@ -265,6 +268,12 @@ contract PokerMock is Ownable {
         emit CommunityCardsDealt(_tableId, _roundId, _cards);
     }
 
+    // This actually may not finish the round...
+    // 1. Checks if the game is over due to folds and reinitializes the table
+    // 2. Checks if the round has ended:
+    // 2.1 Advances the round if this is not the final round
+    // 2.2 Showdown if this is the final round
+    // 3. Increments the turn if none of the above are true
     function _finishRound(uint _tableId, Table storage _table) internal {
         Round storage _round = rounds[_tableId][_table.currentRound];
         // if all of the other players have folded then the remaining player automatically wins
@@ -331,6 +340,7 @@ contract PokerMock is Ownable {
         return _currentTurn + 1;
     } 
 
+    // Reinitiation preps the table for another game with the same players 
     function _reInitiateTable(Table storage _table, uint _tableId) internal {
 
         _table.state = TableState.Inactive;
