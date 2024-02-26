@@ -6,12 +6,12 @@ import "./PokerHandProvider.sol";
 
 contract ActualPokerHandProvider is PokerHandProvider 
 {
-    function register_player(uint table_id, uint handNum, uint salt) internal
+    function register_player(uint table_id, uint salt) internal
     {
         // anyone can put random junk in here I suppose, even if they're not playing
         // player can overwrite their salt too, salt is used atomically so it doesn't matter
         address player = msg.sender;
-        salts[player][table_id][handNum] = salt;
+        salts[player][table_id] = salt;
     }   
 
     // deal all cards, 

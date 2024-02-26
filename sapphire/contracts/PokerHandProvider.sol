@@ -2,8 +2,8 @@ pragma solidity ^0.8.9;
 
 // Utility contract that contains the salts, cards, and mappings (with getters)
 contract PokerHandProvider {
-       // player address, table, hand, to salt
-    mapping(address => mapping(uint => mapping(uint => uint))) internal salts;
+       // player address, table,to salt
+    mapping(address => mapping(uint => uint)) internal salts;
 
     // actual encrypted cards don't need to be stored (no mapping)
 

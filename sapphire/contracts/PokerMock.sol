@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./ActualPokerHandProvider.sol";
 
 // Terminology Relationship
 // Every cycle where all cards are dealt is called a "Hand". This is sometimes called a ROUND but we will use Hand.
@@ -49,13 +50,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // Showdown() Reveal all unfolded player's cards and compare hands. Payout and Move back to start 
 
-contract PokerMock is Ownable {
+contract PokerMock is Ownable, ActualPokerHandProvider {
+
+    enum BettingRound 
+    {
+        AfterPreflop,
+        AfterFlop,
+        AfterTurn,
+        AfterRiver
+    }
 
     enum TableState {
         Active, 
         Inactive, // Awaiting Admin to Deal the Hole Cards
         Showdown 
-    }  
+    }
+
     enum PlayerAction {
         Call,
         Raise,
@@ -65,15 +75,13 @@ contract PokerMock is Ownable {
 
     event NewTableCreated(uint tableId, Table table);
     event NewBuyIn(uint tableId, address player, uint amount);
-    event CardsDealt(PlayerCardHashes[] PlayerCardHashes, uint tableId);
     event BettingRoundOver(uint tableId, uint round);
-    event CommunityCardsDealt(uint tableId, uint roundId, uint8[] cards);
     event TableShowdown(uint tableId);
 
     struct Table {
         TableState state;
         uint totalHands; // total Hands till now
-        uint currentBettingRound; // index of the current round
+        BettingRound currentBettingRound; // index of the current round
         uint buyInAmount;
         uint maxPlayers;
         address[] players;
@@ -81,20 +89,13 @@ contract PokerMock is Ownable {
         uint bigBlind;
         IERC20 token; // the token to be used to play in the table
     }
-    struct BettingRound {
+
+    struct BettingRoundInfo {
         bool state; // state of the betting round, if this is active or not
         uint turn; // an index on the players array, the player who has the current turn
         address[] players; // players still playing in the round who have not folded
         uint highestChip; // the current highest chip to be called in the round. 
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
-    }
-    struct PlayerCardHashes {
-        bytes32 card1Hash;
-        bytes32 card2Hash;
-    }
-    struct PlayerCards {
-        uint8 card1;
-        uint8 card2;
     }
 
     uint public totalTables;
@@ -103,12 +104,8 @@ contract PokerMock is Ownable {
     // keeps track of the remaining chips of the player in a table
     // player => tableId => remainingChips
     mapping(address => mapping(uint => uint)) public chips;
-    // player => tableId => handNum => PlayerCardHashes
-    mapping(address => mapping(uint => mapping(uint => PlayerCardHashes))) public playerHashes;
     // tableId => bettingRoundNum => BettingRound
-    mapping(uint => mapping(uint => BettingRound)) public bettingRounds;
-    // tableId => int8[] community cards
-    mapping(uint => uint8[]) public communityCards;
+    mapping(uint => mapping(BettingRound => BettingRoundInfo)) public bettingRounds;
 
     constructor() Ownable(msg.sender) 
     {
@@ -134,7 +131,7 @@ contract PokerMock is Ownable {
         tables[totalTables] =  Table({
             state: TableState.Inactive,
             totalHands: 0,
-            currentBettingRound: 0,
+            currentBettingRound: BettingRound.AfterPreflop,
             buyInAmount: _buyInAmount,
             maxPlayers: _maxPlayers,
             players: empty,
@@ -151,7 +148,7 @@ contract PokerMock is Ownable {
     /// @dev first the players have to call this method to buy in and enter a table
     /// @param _tableId the unique id of the table
     /// @param _amount The amount of tokens to buy in the table. (must be greater than or equal to the minimum table buy in amount)
-    function buyIn(uint _tableId, uint _amount) public {
+    function buyIn(uint _tableId, uint _amount, uint salt) public {
         Table storage table = tables[_tableId];
 
         require(_amount >= table.buyInAmount, "Not enough buyInAmount");
@@ -164,6 +161,8 @@ contract PokerMock is Ownable {
         // add player to table
         table.players.push(msg.sender);
 
+        register_player(_tableId, salt);
+
         emit NewBuyIn(_tableId, msg.sender, _amount);
     }
 
@@ -171,39 +170,35 @@ contract PokerMock is Ownable {
     /// The key of the hash and the card itself will be sent privately by the owner to the player
     /// event is kept onchain so that other players can later verify that there was no cheating
     /// This will deal the cards to the players and start the round
-    function dealCards(PlayerCardHashes[] memory _playerCards, uint _tableId) external onlyOwner {
+    function dealCards(uint _tableId) external onlyOwner {
         Table storage table = tables[_tableId];
-        uint n = table.players.length;
+        uint numPlayers = table.players.length;
         require(table.state == TableState.Inactive, "Game already going on");
-        require(n > 1 && _playerCards.length == n, "ERROR: PlayerCardHashes Length");
         table.state = TableState.Active;
 
         // initiate the first betting round
-        BettingRound storage bettingRound = bettingRounds[_tableId][0];
+        BettingRoundInfo storage bettingRound = bettingRounds[_tableId][BettingRound.AfterPreflop];
 
         bettingRound.state = true;
         bettingRound.players = table.players;
         bettingRound.highestChip = table.bigBlind;
     
         // initiate the small blind and the big blind
-        for (uint i=0; i < n; i++) {
-            if (i == (n-1)) { // the last player
+        for (uint i=0; i < numPlayers; i++) {
+            if (i == (numPlayers-1)) { // the last player
                 // small blinds
                 bettingRound.chips[i] = table.bigBlind / 2;
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind / 2;
-            } else if (i == (n-2)) { // the last second player
+            } else if (i == (numPlayers-2)) { // the last second player
                 // big blinds
                 bettingRound.chips[i] = table.bigBlind; // update the round array
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
             }
-
-            // save the player hashes for later use in showdown()
-            playerHashes[table.players[i]][_tableId][table.totalHands] = _playerCards[i];
         }
 
         table.pot += table.bigBlind + (table.bigBlind/2);
 
-        emit CardsDealt(_playerCards, _tableId);
+        populate_cards(_tableId, table.totalHands, table.players);
     }
 
     /// @param _raiseAmount only required in case of raise. Else put zero. This is the amount you are putting in addition to what you have already put in this round
@@ -211,7 +206,7 @@ contract PokerMock is Ownable {
         Table storage table = tables[_tableId];
         require(table.state == TableState.Active, "No Active Round");
         
-        BettingRound storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
+        BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
         require(bettingRound.players[bettingRound.turn] == msg.sender, "Not your turn");
 
         if (_action == PlayerAction.Call) {
@@ -262,23 +257,23 @@ contract PokerMock is Ownable {
     /// @notice only send the keys & cards of the players who are still living
     function showdown(uint _tableId, uint[] memory _keys, PlayerCards[] memory _cards) external onlyOwner {
         Table storage table = tables[_tableId];
-        BettingRound memory bettingRound = bettingRounds[_tableId][3];
+        BettingRoundInfo memory bettingRound = bettingRounds[_tableId][BettingRound.AfterRiver];
 
         require(table.state == TableState.Showdown);
 
         uint n = bettingRound.players.length;
         require(_keys.length == n && _cards.length == n, "Incorrect arr length");
 
-        // verify the player hashes
-        for (uint i=0; i<n;i++) {
-            bytes32 givenHash1 = keccak256(abi.encodePacked(_keys[i], _cards[i].card1));
-            bytes32 givenHash2 = keccak256(abi.encodePacked(_keys[i], _cards[i].card2));
+        // // verify the player hashes
+        // for (uint i=0; i<n;i++) {
+        //     bytes32 givenHash1 = keccak256(abi.encodePacked(_keys[i], _cards[i].card1));
+        //     bytes32 givenHash2 = keccak256(abi.encodePacked(_keys[i], _cards[i].card2));
 
-            PlayerCardHashes memory hashes = playerHashes[bettingRound.players[i]][_tableId][table.totalHands];
+        //     PlayerCardHashes memory hashes = playerHashes[bettingRound.players[i]][_tableId][table.totalHands];
 
-            require(hashes.card1Hash == givenHash1, "incorrect cards");
-            require(hashes.card2Hash == givenHash2, "incorrect cards");
-        }
+        //     require(hashes.card1Hash == givenHash1, "incorrect cards");
+        //     require(hashes.card2Hash == givenHash2, "incorrect cards");
+        // }
 
         // now choose winner
         address winner;
@@ -303,16 +298,6 @@ contract PokerMock is Ownable {
         _reInitiateTable(table, _tableId);
     }
 
-    /// @dev method called by the offchain node to update the community cards for the next round
-    /// @param _roundId The round for which the cards are being dealt (1=>Flop, 2=>Turn, 3=>River)
-    /// @param _cards Code of each card(s), (as per the PokerHandUtils Library)
-    function dealCommunityCards(uint _tableId, uint _roundId, uint8[] memory _cards) external onlyOwner {
-        for (uint i=0; i<_cards.length; i++) {
-            communityCards[_tableId].push(_cards[i]);
-        }
-        emit CommunityCardsDealt(_tableId, _roundId, _cards);
-    }
-
     // This actually may not finish the round...
     // 1. Checks if the game is over due to folds and reinitializes the table
     // 2. Checks if the round has ended:
@@ -320,7 +305,7 @@ contract PokerMock is Ownable {
     // 2.2 Showdown if this is the final round
     // 3. Increments the turn if none of the above are true
     function _finishRound(uint _tableId, Table storage _table) internal {
-        BettingRound storage _bettingRound = bettingRounds[_tableId][_table.currentBettingRound];
+        BettingRoundInfo storage _bettingRound = bettingRounds[_tableId][_table.currentBettingRound];
         // if all of the other players have folded then the remaining player automatically wins
         uint n = _bettingRound.players.length;
         bool allChipsEqual = _allElementsEqual(_bettingRound.chips); // checks if anybody has raised or not
@@ -334,7 +319,7 @@ contract PokerMock is Ownable {
             _reInitiateTable(_table, _tableId);
         } else if (allChipsEqual) {
             // all elements equal meaning nobody has raised
-            if (_table.currentBettingRound == 3) {
+            if (_table.currentBettingRound == BettingRound.AfterPreflop) {
                 // if nobody has raised and this is the final round then go to evaluation
                 _table.state = TableState.Showdown;
 
@@ -348,17 +333,15 @@ contract PokerMock is Ownable {
                 // if this is not the last player then it might just be check
                 // so dont go to the next round
                 if (_bettingRound.turn == n-1) {
-
-                    // also emit an event if going to the next round which will tell the
-                    // offchain node to send the next card (flop, turn or river)
-                    emit BettingRoundOver(_tableId, _table.currentBettingRound);
-
-                     _table.currentBettingRound += 1;
+                     _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
 
                     uint[] memory _chips = new uint[](n);
 
+                    // deal Community 
+                    reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
+
                     // initiate the next round
-                    bettingRounds[_tableId][_table.currentBettingRound] = BettingRound({
+                    bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
                         state: true,
                         turn : 0,
                         players: _bettingRound.players, // all living players from the last round
@@ -383,19 +366,38 @@ contract PokerMock is Ownable {
             return 0;
         }
         return _currentTurn + 1;
-    } 
+    }
+
+    function reveal_community_card_based_on_round_that_ended(uint table_id, uint handNum, BettingRound round) internal 
+    {
+        if (round == BettingRound.AfterPreflop)
+        {
+            reveal_community_card(table_id, handNum, 0);
+            reveal_community_card(table_id, handNum, 1);
+            reveal_community_card(table_id, handNum, 2);
+        } 
+        else if (round == BettingRound.AfterFlop) 
+        {
+            reveal_community_card(table_id, handNum, 3);
+        } 
+        else if (round == BettingRound.AfterRiver) 
+        {
+            reveal_community_card(table_id, handNum, 4);
+        } else {
+            // should not be executed in this case!
+        }
+    }   
 
     // Reinitiation preps the table for another game with the same players 
     function _reInitiateTable(Table storage _table, uint _tableId) internal {
 
         _table.state = TableState.Inactive;
         _table.totalHands += 1;
-        _table.currentBettingRound = 0;
+        _table.currentBettingRound = BettingRound.AfterPreflop;
         _table.pot = 0;
-        delete communityCards[_tableId]; // delete the community cards of the previous round
 
         // initiate the first round
-        BettingRound storage round = bettingRounds[_tableId][0];
+        BettingRoundInfo storage round = bettingRounds[_tableId][BettingRound.AfterPreflop];
         round.state = true;
         round.players = _table.players;
         round.highestChip = _table.bigBlind;
