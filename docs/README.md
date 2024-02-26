@@ -1,5 +1,8 @@
 # References Used:
 
+## Source of EthDenver participants: 
+https://poap.family/event/168088
+
 ## Faucet: 
 https://faucet.testnet.oasis.dev/?
 
