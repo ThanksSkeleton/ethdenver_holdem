@@ -35,6 +35,7 @@
         </a>
       </div>
     </form>
+    <div><% totalTables %></div>
   </div>
 </div>
 </template>
@@ -49,16 +50,14 @@ var NewGameComponent = Vue.component("NewGame", {
       table_name: "",
       player_count: "4",
       buy_in: "100",
-
+      totalTables: "loading",
     };
   },
-  created: function () {
-  },
-  methods: {
-    create_game: async function() {
-      console.log("create_game");
-      this.provider = MMSDK.getProvider();
-      try {
+  created: async function () {
+    console.log("created");
+    try {
+        await MMSDK.connect();
+        this.provider = await MMSDK.getProvider();
         const res = await this.provider.request({
           method: 'eth_requestAccounts',
           params: [],
@@ -67,9 +66,21 @@ var NewGameComponent = Vue.component("NewGame", {
         console.log('request accounts', res);
         this.lastResponse = '';
         await this.add_chain();
-        let contract = await PokerContract(this.provider);
-        await contract.createTable(this.buy_in, this.player_count, 1, TOKEN);
-        // this.chainId = this.provider.chainId;
+        this.contract = await PokerContract(this.provider);
+        this.totalTables = await this.contract.totalTables();
+        for (let i = 0; i < this.totalTables; i++) {
+          const table = await this.contract.tables(i);
+          console.log('table', {state: table.state, totalHands: table.totalHands, currentRound: table.currentRound, buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot, bigBlind: table.bigBlind, token: table.token});
+        }
+      } catch (e) {
+        console.log('create ERR', e);
+      }      
+  },
+  methods: {
+    create_game: async function() {
+      console.log("create_game");
+      try {
+        await this.contract.createTable(this.buy_in, this.player_count, 1, TOKEN);
       } catch (e) {
         console.log('request accounts ERR', e);
       }      

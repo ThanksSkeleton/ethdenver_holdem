@@ -14,6 +14,8 @@ async function PokerContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
 
     abi = [
+        "function tables(uint256) public view returns (tuple(uint8 state, uint256 totalHands, uint256 currentRound, uint256 buyInAmount, uint256 maxPlayers, uint256 pot, uint256 bigBlind, uint256 token))",
+        "function totalTables() public view returns (uint256)",
         "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
     ];
     const signer = await provider.getSigner();
