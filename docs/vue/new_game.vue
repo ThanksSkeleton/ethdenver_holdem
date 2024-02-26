@@ -67,7 +67,9 @@ var NewGameComponent = Vue.component("NewGame", {
         console.log('request accounts', res);
         this.lastResponse = '';
         await this.add_chain();
-        this.chainId = this.provider.chainId;
+        let contract = await PokerContract(this.provider);
+        await contract.createTable(this.buy_in, this.player_count, 1, TOKEN);
+        // this.chainId = this.provider.chainId;
       } catch (e) {
         console.log('request accounts ERR', e);
       }      
