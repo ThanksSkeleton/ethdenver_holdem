@@ -3,56 +3,84 @@ pragma solidity ^0.8.9;
 
 import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
 
-contract Vigil {
+contract Sapphire_Junk {
 
     // Selecting Cards
     // Generate https://api.docs.oasis.io/sol/sapphire-contracts/index.html
 
 
-    // player => tableId => handNum => PlayerCardHashes
+    // salts are used to encrypt the cards
+    // player address, table, hand, to salt
+    mapping(address => mapping(uint => mapping(uint => uint))) private salts;
+
+    // actual encrypted cards don't need to be stored (no mapping)
+
+    // playercards are kept, privately (so they can be revealed during showdown)
+    // player address, table, hand, to PlayerCards Struct
     mapping(address => mapping(uint => mapping(uint => PlayerCards))) private playerCards;
-    // current community cards (Private)
 
-    // tableId => int8[] community cards
-    // We generate all at once and then reveal when needed
-    mapping(uint => uint[]) private communityCards_Private;
-    mapping(uint => uint[]) public communityCards_Public;
+    // table, hand, to CommunityCards Struct
+    mapping(uint => mapping(uint => CommunityCards)) private communityCards;
 
-    event Deoxsys_Encrypt(
-        bytes nonce, 
-        bytes encrypted
+    // event Deoxsys_Encrypt(
+    //     bytes nonce, 
+    //     bytes encrypted
+    // );
+
+    // Encrypted by Hashing
+    event HoleEncryptedCards 
+    (
+        // So the player can identify if this is relevant
+        address player,
+        uint tableId,
+        uint handNum, 
+
+        // The Actual Encrypted Cards
+        bytes hole1_encrypted,
+        bytes hole2_encrypted
     );
 
-    event Keccak_Encrypt( 
-        bytes encrypted
+    event CommunityCardRevealed 
+    (
+        uint tableId,
+        uint handNum, 
+        uint communityindex, // 0,1,2 = Flop 3 = Fold 4 = River
+        uint communitycard
     );
 
+    // internal secret storage, but unencrypted
     struct PlayerCards {
-        bytes hole1_encrypted;
-        bytes hole2_hashed;
+        uint hole1;
+        uint hole2;
     }
 
-    function deoxsys_hello_world() public returns (bytes memory)
+    // internal secret storage, but unencrypted
+    struct CommunityCards 
     {
-        bytes32 key = "hello" ;
-        bytes32 nonce = keccak256(abi.encodePacked(block.timestamp, msg.sender));
-        bytes memory text = "secret_text_whale_hello";
-        bytes memory ad = "";
-        bytes memory encrypted =  Sapphire.encrypt(key, nonce, text, ad);
-        emit Deoxsys_Encrypt(abi.encodePacked(nonce), encrypted);
-        return encrypted;
+        uint[5] allcards; 
     }
 
-    function keccak_hello_world() public returns (bytes memory)
-    {
-        uint table = 1;
-        uint8 hand_round = 1; // i.e the fifth distict hand that has ever been played at the table
-        uint8 card = 32;
-        bytes32 secretKey = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
-        bytes memory encrypted = abi.encodePacked(keccak256(abi.encodePacked(secretKey, table, hand_round, card)));
-        emit Keccak_Encrypt( encrypted);
-        return encrypted;
-    }
+    // function deoxsys_hello_world() public returns (bytes memory)
+    // {
+    //     bytes32 key = "hello" ;
+    //     bytes32 nonce = keccak256(abi.encodePacked(block.timestamp, msg.sender));
+    //     bytes memory text = "secret_text_whale_hello";
+    //     bytes memory ad = "";
+    //     bytes memory encrypted =  Sapphire.encrypt(key, nonce, text, ad);
+    //     emit Deoxsys_Encrypt(abi.encodePacked(nonce), encrypted);
+    //     return encrypted;
+    // }
+
+    // function keccak_hello_world() public returns (bytes memory)
+    // {
+    //     uint table = 1;
+    //     uint8 hand_round = 1; // i.e the fifth distict hand that has ever been played at the table
+    //     uint8 card = 32;
+    //     bytes32 secretKey = 0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0;
+    //     bytes memory encrypted = abi.encodePacked(keccak256(abi.encodePacked(secretKey, table, hand_round, card)));
+    //     emit Keccak_Encrypt( encrypted);
+    //     return encrypted;
+    // }
 
 
     // // Encrypted Get Psudeocode and Notes
@@ -74,26 +102,47 @@ contract Vigil {
     // }
     // }
 
-    function populate_cards(uint table_id, uint handNum, address[] memory players) public {
+    function register_player(uint table_id, uint handNum, uint salt) internal
+    {
+        // anyone can put random junk in here I suppose, even if they're not playing
+        // player can overwrite their salt too, salt is used atomically so it doesn't matter
+        address player = msg.sender;
+        salts[player][table_id][handNum] = salt;
+    }   
+
+    function populate_cards(uint table_id, uint handNum, address[] memory players) internal {
         uint[] memory cards = generateCards(players.length);
         for (uint player_index = 0; player_index < players.length; player_index++) {
             uint hole_1_index = player_index * 2; 
             uint hole_2_index = player_index * 2 + 1; 
-            playerCards[players[player_index]][table_id][handNum] = PlayerCards(uint8(cards[hole_1_index]), uint8(cards[hole_2_index]));
+
+            uint hole_1_card = uint8(cards[hole_1_index]);
+            uint hole_2_card = uint8(cards[hole_2_index]);
+
+            // store the cards secretly on chain
+            playerCards[players[player_index]][table_id][handNum] = PlayerCards(hole_1_card, hole_1_card);
+
+            uint salt = salts[players[player_index]][table_id][handNum];
+
+            // encrypt and emit the cards back to the player
+            emit HoleEncryptedCards(players[player_index], table_id, handNum, 
+                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card))),
+                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)))
+            );
         }
         // Assuming communityCards_Private is an array of arrays, correct handling would depend on its declaration
         for (uint community_cards_subindex = 0; community_cards_subindex < 5; community_cards_subindex++) {
             uint community_cards_index = community_cards_subindex + 2 * players.length;
             // Assuming each table_id corresponds to an array of community cards
-            communityCards_Private[table_id].push(cards[community_cards_index]);
+            communityCards[table_id].push(cards[community_cards_index]);
         }
     }
 
-    function reveal_community_cards(uint table_id, uint[] memory whichcards) public 
+    function reveal_community_cards(uint table_id, uint handNum, uint[] memory communityIndexes) public 
     {
-        for (uint community_card_index_index = 0;  community_card_index_index < whichcards.length; community_card_index_index++) 
+        for (uint community_card_index_index = 0;  community_card_index_index < communityIndexes.length; community_card_index_index++) 
         {
-            communityCards_Public[table_id].push(communityCards_Private[table_id][whichcards[community_card_index_index]]);
+            communityCards[table_id][handNum].allcards[communityIndexes[community_card_index_index]];
         }
     }
 
