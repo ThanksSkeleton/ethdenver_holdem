@@ -1,5 +1,8 @@
 # References Used:
 
+## Source of EthDenver participants: 
+https://poap.family/event/168088
+
 ## Faucet: 
 https://faucet.testnet.oasis.dev/?
 
@@ -17,11 +20,11 @@ https://metadata.ens.domains/docs#/paths/~1%7BnetworkName%7D~1avatar~1%7Bname%7D
 
 ## Testnet Deployments:
 
-const POKER = "0x4c4B3671c42c6E780ec5799A1612d8D5305ff6cd";
-const TOKEN = "0x39d61f9540D84D5E6920B06e973CEE19D79FeFbD";
-
 ## Token
-https://testnet.explorer.sapphire.oasis.dev/address/0x39d61f9540D84D5E6920B06e973CEE19D79FeFbD/write-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0x669F46b55C7C2aC145eD57402943405BdF41d7E6/write-contract#address-tabs
+
+## Poker
+https://testnet.explorer.sapphire.oasis.dev/address/0x75140f88b0F4B2fBC6DadC16CC51203ADB07fe36/write-contract#address-tabs
 
 
 ## Wallets

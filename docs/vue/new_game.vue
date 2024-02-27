@@ -51,7 +51,7 @@
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Hands</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Current Round</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Buy In</th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Max Players</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Players</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pot</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Big Blind</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Chips</th>
@@ -78,7 +78,7 @@
                       <% table.buyInAmount %>
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <% table.maxPlayers %>
+                      <% table.players.length %> / <% table.maxPlayers %>
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <% table.pot %>
@@ -89,9 +89,17 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <% table.chips %>
                     </td>
-                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                      <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">Join
-                        Table</a>
+                    <td v-if="table.chips == 0"
+                      class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                      <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
+                        Join Table
+                      </a>
+                    </td>
+                    <td v-if="table.chips > 0"
+                      class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                      <router-link :to="'/table/' + table.index" class="text-indigo-600 hover:text-indigo-900">
+                        Go to Table
+                      </router-link>
                     </td>
                   </tr>
                 </tbody>
@@ -108,13 +116,13 @@
 var NewGameComponent = Vue.component("NewGame", {
   template: document.getElementById("new_game").innerHTML,
   delimiters: ["<%", "%>"],
-  props: { tableHeight: { default: 300 } },
   data: () => {
     return {
       table_name: "",
       player_count: "4",
       buy_in: "100",
       balance: "loading",
+      chips: "loading",
       tables: []
     };
   },
@@ -130,20 +138,21 @@ var NewGameComponent = Vue.component("NewGame", {
       this.account = res[0];
       console.log('request accounts', res);
       this.lastResponse = '';
-      await this.add_chain();
+      await AddChain(this.provider);
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
       let totalTables = await this.contract.totalTables();
       for (let i = 0; i < totalTables; i++) {
         const table = await this.contract.tables(i);
+        const players = await this.contract.tablePlayers(i);
         let chips = await this.contract.chips(this.account, i);
         this.tables.push({
           index: i, state: table.state,
           totalHands: table.totalHands, currentRound: table.currentRound,
           buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
           bigBlind: table.bigBlind, token: table.token,
-          chips: chips
+          chips: chips, players: players
         });
       }
     } catch (e) {
@@ -161,39 +170,22 @@ var NewGameComponent = Vue.component("NewGame", {
     },
     join_game: async function (num) {
       console.log("join_game", num);
+      let salt = NewSalt();
+      localStorage.setItem("salt:" + num, salt);
       let table = this.tables[num];
       try {
         let allowance = await this.token.allowance(this.account, POKER);
         if (allowance < table.buyInAmount) {
-          let ok = await this.token.approve(POKER, MaxUint256);
-          if (ok) await this.contract.buyIn(num, table.buyInAmount);
+          let tx = await this.token.approve(POKER, MaxUint256);
+          let ok = await tx.wait();
+          if (ok) await this.contract.buyIn(num, table.buyInAmount, salt);
         } else {
-          await this.contract.buyIn(num, table.buyInAmount);
+          await this.contract.buyIn(num, table.buyInAmount, salt);
         }
       } catch (e) {
         console.log('join_game ERR', e);
       }
     },
-    add_chain: async function () {
-      try {
-        const res = await this.provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: '0x5aff',
-              chainName: 'Oasis Sapphire Testnet logoOasis Sapphire Testnet',
-              blockExplorerUrls: ['https://testnet.explorer.sapphire.oasis.dev/'],
-              nativeCurrency: { symbol: 'TEST', decimals: 18 },
-              rpcUrls: ['https://testnet.sapphire.oasis.dev'],
-            },
-          ],
-        });
-        console.log('add', res);
-        this.lastResponse = res;
-      } catch (e) {
-        console.log('ADD ERR', e);
-      }
-    }
   },
 });
 </script>

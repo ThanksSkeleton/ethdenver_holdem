@@ -54,8 +54,12 @@
         },
         {
             name: 'Table',
-            path: '/table/',
-            component: TableComponent
+            params: {
+                table_index: '0'
+            },
+            path: '/table/:table_index',
+            component: TableComponent,
+            props: true,
         }];
 
         const router = new VueRouter({
