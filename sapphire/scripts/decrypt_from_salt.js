@@ -1,13 +1,11 @@
 
 function hash_decrypt_card(salt, table_id, handnum, encrypted) {
-  const ethers = require('ethers');
-
   for (let card = 0; card <= 51; card++) {
     // Generate the keccak256 hash of the concatenated salt, table_id, handnum, and card
-    const hash = ethers.utils.keccak256(ethers.utils.solidityPack(['uint8', 'uint8', 'uint8', 'uint8'], [salt, table_id, handnum, card]));
+    const hash = ethers.keccak256(ethers.solidityPack(['uint8', 'uint8', 'uint8', 'uint8'], [salt, table_id, handnum, card]));
 
     // Check if the generated hash matches the encrypted data
-    if (hash === ethers.utils.hexlify(encrypted)) {
+    if (hash === ethers.hexlify(encrypted)) {
       console.log(`Found secret card: ${card}`);
       return card; // Exiting the function as we found the matching card
     }

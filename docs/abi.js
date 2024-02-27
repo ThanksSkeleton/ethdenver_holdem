@@ -47,6 +47,7 @@ async function PokerContract(provider) {
         "function tables(uint256) public view returns (tuple(uint8 state, uint256 totalHands, uint256 currentRound, uint256 buyInAmount, uint256 maxPlayers, uint256 pot, uint256 bigBlind, uint256 token))",
         "function totalTables() public view returns (uint256)",
         "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
+        "function encryptedPlayerCards(address player, uint256 tableId, uint256 hand) public view returns (bytes, bytes)",
     ];
     let signer = await provider.getSigner();
     // signer = sapphire.wrap(signer);
@@ -84,4 +85,21 @@ async function AddChain(provider) {
     } catch (e) {
       console.log('ADD ERR', e);
     }
+}
+
+function HashDecryptCard(salt, table_id, handnum, encrypted) {
+  for (let card = 0; card <= 51; card++) {
+    // Generate the keccak256 hash of the concatenated salt, table_id, handnum, and card
+    // console.log([salt, table_id, handnum, card])
+    const hash = ethers.keccak256(ethers.solidityPacked(['uint256', 'uint256', 'uint256', 'uint256'], [salt, table_id, handnum, card]));
+
+    // Check if the generated hash matches the encrypted data
+    if (hash === ethers.hexlify(encrypted)) {
+      console.log(`Found secret card: ${card}`);
+      return card; // Exiting the function as we found the matching card
+    }
+  }
+
+  console.log('No matching card found.');
+  return -1; // Indicate that no matching card was found
 }

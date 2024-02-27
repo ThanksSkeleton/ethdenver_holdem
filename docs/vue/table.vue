@@ -22,12 +22,11 @@
     <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
       <h2 class="text-2xl font-bold tracking-tight text-gray-900">You (<% this.account %>)</h2>
       <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-        <div class="group relative">
-
+        <div v-for="card in cards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
-            <img src="./assets/img/cards/eth_back.png" alt="Backside"
-              class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+            <img :src="'./assets/img/cards/' + card" alt="Backside"
+              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
 
@@ -49,6 +48,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
+      cards: ["eth_back.png", "eth_back.png"],
     };
   },
   created: async function () {
@@ -57,7 +57,7 @@ var TableComponent = Vue.component("Table", {
       let { provider, account } = await Init();
       this.account = account;
       this.provider = provider;
-      
+
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
@@ -71,11 +71,29 @@ var TableComponent = Vue.component("Table", {
         chips: this.chips
       };
       this.players = await this.contract.tablePlayers(this.table_index);
+      let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+      let salt = localStorage.getItem('salt:' + this.table_index);
+      this.cards = [];
+      for (let i = 0; i < cards.length; i++) {
+        let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+        card = this.numToCard(card);
+        this.cards.push(card);
+      }
       console.log('players', this.players);
     } catch (e) {
       console.log('create ERR', e);
     }
   },
-  methods: {},
+  methods: {
+    numToCard: function (num) {
+      if (num == -1) return "eth_back.png";
+
+      let suit = Math.floor(num / 13);
+      let value = num % 13;
+      let suits = ['H', 'D', 'C', 'S'];
+      let values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'J', 'Q', 'K', 'A'];
+      return values[value] + suits[suit] + ".png";
+    },
+  },
 });
 </script>
