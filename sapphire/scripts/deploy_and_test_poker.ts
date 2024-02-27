@@ -6,6 +6,7 @@ async function main() {
   const poker_mock_factory = await ethers.getContractFactory('Poker');
   const poker_mock = await poker_mock_factory.deploy();
   console.log('Poker deployed to:', await poker_mock.getAddress());
+}
 
 //   import { expect } from "chai";
 //   import chai = require("chai");
@@ -391,8 +392,7 @@ async function main() {
 //   };
 // }
 
-// main().catch((error) => {
-//   console.error(error);
-//   process.exitCode = 1;
-// });
-}
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

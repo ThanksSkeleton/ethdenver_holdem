@@ -3,7 +3,8 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ActualPokerHandProvider.sol";
+//import "./ActualPokerHandProvider.sol";
+import "./StaticPokerHandProvider.sol";
 
 // Terminology Relationship
 // Every cycle where all cards are dealt is called a "Hand". This is sometimes called a ROUND but we will use Hand.
@@ -50,7 +51,7 @@ import "./ActualPokerHandProvider.sol";
 
 // Showdown() Reveal all unfolded player's cards and compare hands. Payout and Move back to start 
 
-contract Poker is Ownable, ActualPokerHandProvider {
+contract Poker is Ownable, StaticPokerHandProvider {
 
     enum BettingRound 
     {
@@ -177,10 +178,6 @@ contract Poker is Ownable, ActualPokerHandProvider {
         }
     }
 
-    /// @dev This method will be called by the owner to send the hash of the cards to all the players
-    /// The key of the hash and the card itself will be sent privately by the owner to the player
-    /// event is kept onchain so that other players can later verify that there was no cheating
-    /// This will deal the cards to the players and start the round
     function dealCards(uint _tableId) internal {
         Table storage table = tables[_tableId];
         uint numPlayers = table.players.length;

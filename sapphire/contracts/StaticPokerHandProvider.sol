@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@oasisprotocol/sapphire-contracts/contracts/Sapphire.sol";
 import "./PokerHandProvider.sol";
 
 contract StaticPokerHandProvider is PokerHandProvider 
 {
-    function register_player(uint table_id, uint handNum, uint salt) internal
+    function register_player(uint table_id, uint salt) internal
     {
-        // Don't need to do anything
+        // anyone can put random junk in here I suppose, even if they're not playing
+        // player can overwrite their salt too, salt is used atomically so it doesn't matter
+        address player = msg.sender;
+        salts[player][table_id] = salt;
     }   
 
     // deal all cards, 
@@ -28,10 +30,15 @@ contract StaticPokerHandProvider is PokerHandProvider
 
             uint salt = salts[players[player_index]][table_id];
 
+            bytes memory encrypted_card_1  = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card)));
+            bytes memory encrypted_card_2 = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)));
+
+            encryptedPlayerCards[players[player_index]][table_id][handNum] = EncryptedCards(encrypted_card_1, encrypted_card_2);
+
             // encrypt and emit the cards back to the player
             emit EncryptedCardsEvent(players[player_index], table_id, handNum, 
-                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card))),
-                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)))
+                encrypted_card_1,
+                encrypted_card_2
             );
         }
 
@@ -47,13 +54,11 @@ contract StaticPokerHandProvider is PokerHandProvider
         );
     }
 
-    function generateCards(uint howMany) internal pure returns (uint[] memory) {
+    function generateCards(uint howMany) private view returns (uint[] memory) {
         uint[] memory toReturn = new uint[](howMany);
         uint count = 0;
         
-        // TODO - THIS WHILE LOOP IS A LITTLE UGLY. 
-        // BUT GENERATING AND REJECTING WAS EASY AND OBVIOUSLY CORRECT
-        // GOT A BETTER WAY? LET'S DO IT
+        //DUMMY
         while (count < howMany) {
             toReturn[count] = count;
             count++;
