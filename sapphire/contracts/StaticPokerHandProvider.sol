@@ -29,7 +29,7 @@ contract StaticPokerHandProvider is PokerHandProvider
             uint salt = salts[players[player_index]][table_id];
 
             // encrypt and emit the cards back to the player
-            emit HoleEncryptedCards(players[player_index], table_id, handNum, 
+            emit EncryptedCardsEvent(players[player_index], table_id, handNum, 
                 abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card))),
                 abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)))
             );

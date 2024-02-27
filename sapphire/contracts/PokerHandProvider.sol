@@ -6,6 +6,7 @@ contract PokerHandProvider {
     mapping(address => mapping(uint => uint)) internal salts;
 
     // actual encrypted cards don't need to be stored (no mapping)
+    mapping(address => mapping(uint => mapping(uint => EncryptedCards))) public encryptedPlayerCards;
 
     // playercards are kept, privately (so they can be revealed during showdown)
     // player address, table, hand, to PlayerCards Struct
@@ -14,13 +15,11 @@ contract PokerHandProvider {
     // table, hand, to CommunityCards Struct
     mapping(uint => mapping(uint => CommunityCards)) internal communityCards;
 
-    // event Deoxsys_Encrypt(
-    //     bytes nonce, 
-    //     bytes encrypted
-    // );
+    // table, hand, communityIndex, to CommunityCards Struct
+    mapping(uint => mapping(uint => mapping(uint => RevealedCommunityCard))) internal revealedCommunityCards;
 
     // Encrypted by Hashing
-    event HoleEncryptedCards 
+    event EncryptedCardsEvent 
     (
         // So the player can identify if this is relevant
         address player,
@@ -32,7 +31,7 @@ contract PokerHandProvider {
         bytes hole2_encrypted
     );
 
-    event CommunityCardRevealed 
+    event CommunityCardRevealedEvent 
     (
         uint tableId,
         uint handNum, 
@@ -46,16 +45,32 @@ contract PokerHandProvider {
         uint hole2;
     }
 
+    struct EncryptedCards 
+    {
+        bytes encryptedHole1;
+        bytes encryptedHole2;
+    }
+
     // internal secret storage, but unencrypted
     struct CommunityCards 
     {
         uint[5] allcards; 
     }
 
-        // community_index: 0,1,2 = Flop 3 = Fold 4 = River
+    struct RevealedCommunityCard 
+    {
+        uint card;
+        bool valid;
+    }
+
+
+
+    // community_index: 0,1,2 = Flop 3 = Fold 4 = River
     function reveal_community_card(uint table_id, uint handNum, uint community_index) internal
     {
-        emit CommunityCardRevealed(table_id, handNum, community_index, communityCards[table_id][handNum].allcards[community_index]);
+        uint card_actual = communityCards[table_id][handNum].allcards[community_index];
+        revealedCommunityCards[table_id][handNum][community_index] = RevealedCommunityCard(card_actual, true);
+        emit CommunityCardRevealedEvent(table_id, handNum, community_index, card_actual);
     }
 
     // function get_player_cards(address player, uint table_id, uint handNum) internal returns (PlayerCards memory)  

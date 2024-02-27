@@ -31,10 +31,15 @@ contract ActualPokerHandProvider is PokerHandProvider
 
             uint salt = salts[players[player_index]][table_id];
 
+            bytes memory encrypted_card_1  = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card)));
+            bytes memory encrypted_card_2 = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)));
+
+            encryptedPlayerCards[players[player_index]][table_id][handNum] = EncryptedCards(encrypted_card_1, encrypted_card_2);
+
             // encrypt and emit the cards back to the player
-            emit HoleEncryptedCards(players[player_index], table_id, handNum, 
-                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card))),
-                abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)))
+            emit EncryptedCardsEvent(players[player_index], table_id, handNum, 
+                encrypted_card_1,
+                encrypted_card_2
             );
         }
 

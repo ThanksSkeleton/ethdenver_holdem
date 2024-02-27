@@ -9,6 +9,7 @@
     "@oasisprotocol/deoxysii": "^0.0.5",
     "@oasisprotocol/sapphire-contracts": "^0.2.7",
     "@openzeppelin/contracts": "^5.0.1",
+    "chai": "^4.4.1",
     "ethers": "^6.11.1"
   }
 }
