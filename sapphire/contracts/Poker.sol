@@ -244,8 +244,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
             uint callAmount = bettingRound.highestChip - bettingRound.chips[bettingRound.turn];
 
+            // Pattern - take from player chips
+            // Mark as contributed for Round
+            // add to pot
             chips[msg.sender][_tableId] -= callAmount;
-
+            bettingRound.chips[bettingRound.turn] += callAmount;
             table.pot += callAmount;
             
         } else if (_action == PlayerAction.Check) {
@@ -261,11 +264,18 @@ contract Poker is Ownable, StaticPokerHandProvider {
             // deduct chips from the player's account
             // add those chips to the pot
             // update the highestChip for the round
-            uint totalAmount = _raiseAmount + bettingRound.chips[bettingRound.turn];
-            require(totalAmount > bettingRound.highestChip, "Raise amount not enough");
-            chips[msg.sender][_tableId] -= _raiseAmount;
-            table.pot += _raiseAmount;
-            bettingRound.highestChip = totalAmount;
+            uint proposedAmount = _raiseAmount + bettingRound.highestChip;
+            uint myRequiredContribution = proposedAmount - bettingRound.chips[bettingRound.turn];
+
+
+            // Pattern - take from player chips
+            // Mark as contributed for Round
+            // add to pot
+            chips[msg.sender][_tableId] -= myRequiredContribution;
+            bettingRound.chips[bettingRound.turn] += myRequiredContribution;
+            table.pot += myRequiredContribution;
+
+            bettingRound.highestChip = proposedAmount;
 
         } else if (_action == PlayerAction.Fold) {
             // in case of folding

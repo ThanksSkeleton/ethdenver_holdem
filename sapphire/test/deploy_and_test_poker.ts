@@ -125,6 +125,8 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       console.log("Player " + (1 + player_index) + " Chips Remaining: "+ chips);
       console.log("Player " + (1 + player_index) + " Chips Contributed To Pot: " + br_chips[player_index])
     }
+
+    console.log("End Summary")
   }
 
   it('Two Player Game Gives them decryptable encrypted Cards, + Raise', async () => {
@@ -146,26 +148,36 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
   });
 
-  it('Four Player Game - Betting in a circle', async () => 
+  it('Four Player Game - Raising and then Calling in a circle', async () => 
   {
     await four_player_table_setup(); 
 
     // Before Betting
     await summarize_chips_four_players();
 
-    // Everyone Betting
+    // Everyone Rasing
 
-    let EVERYONE_RAISES_20 = 20;
-
-    for (const player of four_player_game_players) 
+    for (let [index, player] of four_player_game_players.entries()) 
     {
-      console.log("player raising 20")
-      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, EVERYONE_RAISES_20);
-      summarize_chips_four_players();
+      console.log("Player Raising By 20")
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+      await summarize_chips_four_players();
+    }
+
+    // Players 1-3 calling
+
+    for (let [index, player] of four_player_game_players.entries()) 
+    {
+      if (index != 3) 
+      {
+        console.log("Player "+ index+1 + " Calling")
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
+        await summarize_chips_four_players();
+      }
     }
 
     // After Betting
-    summarize_chips_four_players();
+    await summarize_chips_four_players();
   });
 
 });
