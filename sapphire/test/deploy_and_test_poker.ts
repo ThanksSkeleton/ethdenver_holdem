@@ -19,8 +19,6 @@ chai.use(chaiAsPromised);
 chai.config.includeStack = true;
 
 describe('Hello World Function', () => {
-
-
   let poker : Poker;
   let poker_token: PokerToken;
 
@@ -44,8 +42,10 @@ describe('Hello World Function', () => {
     await poker_token.waitForDeployment();
 
     poker_token.mint(await player1.getAddress(), 1000);
-    poker_token.mint(await player2.getAddress(), 1000);
+    poker_token.mint(await player2.getAddress(), 1000);    
+  });
 
+  it('connecting with two players', async () => {
     const MINIMUM_BUY_IN_AMOUNT = 200;
     const MAX_PLAYERS = 2;
     const BIG_BLIND = 2;
@@ -58,12 +58,16 @@ describe('Hello World Function', () => {
     const player1_salt = 1;
     const player2_salt = 2;
 
+    const HAND_ID = 0;
+
     await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
     await poker.connect(player2).buyIn(TABLE_ID, BUY_IN_AMOUNT, player2_salt);
-  });
 
-  it('returns "Hello, World!"', () => {
-      expect(1).to.equal(1);
+    // confirm that there are cards
+    let p1_encrypted_cards = await poker.encryptedPlayerCards(await player1.getAddress(), TABLE_ID, HAND_ID);
+    console.log("p1" + p1_encrypted_cards);
+    let p2_encrypted_cards = await poker.encryptedPlayerCards(await player2.getAddress(), TABLE_ID, HAND_ID);  
+    console.log("p2" + p2_encrypted_cards);
   });
 });
 
