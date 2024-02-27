@@ -107,15 +107,15 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player4).buyIn(TABLE_ID, BUY_IN_AMOUNT, player4_salt);
   }
 
-  async function summarize_chips_four_players() 
+  async function summarize_chips_four_players(betting_round: number) 
   {
     console.log("Chip Summary")
 
-    let br = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+    let br = await poker.bettingRounds(TABLE_ID, betting_round);
 
     console.log("br.state " + br.state, "br.turn " + br.turn, "br.highestchip " + br.highestChip);
 
-    let br_chips = await poker.bettingRoundChips(TABLE_ID, BETTING_ROUND_PREFLOP);
+    let br_chips = await poker.bettingRoundChips(TABLE_ID, betting_round);
 
     console.log("All Betting Round chips " + br_chips);
 
@@ -153,7 +153,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await four_player_table_setup(); 
 
     // Before Betting
-    await summarize_chips_four_players();
+    await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
 
     // Everyone Rasing
 
@@ -161,7 +161,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     {
       console.log("Player Raising By 20")
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
-      await summarize_chips_four_players();
+      await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
     }
 
     // Players 1-3 calling
@@ -172,12 +172,12 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       {
         console.log("Player "+ index+1 + " Calling")
         await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
-        await summarize_chips_four_players();
+        await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
       }
     }
 
     // After Betting
-    await summarize_chips_four_players();
+    await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
   });
 
 
@@ -196,7 +196,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     {
       console.log("Player Raising By 20")
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
-      await summarize_chips_four_players();
+      await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
     }
 
     // Players 1-3 calling
@@ -207,7 +207,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       {
         console.log("Player "+ (index+1) + " Calling")
         await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
-        await summarize_chips_four_players();
+        await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
       }
     }
 
@@ -215,7 +215,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     console.log("Current Betting Round: " + table2.currentBettingRound);
 
     // After Betting
-    await summarize_chips_four_players();
+    await summarize_chips_four_players(Number(table2.currentBettingRound));
   });
 
 });
