@@ -99,6 +99,10 @@ contract Poker is Ownable, StaticPokerHandProvider {
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
+    // Alternative 1. use a mapping and player counter
+    // Alternative 2. move it out of the struct
+    // Alter
+
     uint public totalTables;
     // id => Table
     mapping(uint => Table) public tables;
@@ -150,6 +154,16 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @param _tableId the unique id of the table
     function tablePlayers(uint _tableId) public view returns (address[] memory) {
         return tables[_tableId].players;
+    }
+
+    function bettingRoundPlayers(uint _tableId, BettingRound bettingRoundNumber) public view returns (address[] memory) 
+    {
+        return bettingRounds[_tableId][bettingRoundNumber].players;
+    }
+
+    function bettingRoundChips(uint _tableId, BettingRound bettingRoundNumber) public view returns (uint[] memory) 
+    {
+        return bettingRounds[_tableId][bettingRoundNumber].chips;
     }
 
     /// @dev first the players have to call this method to buy in and enter a table
