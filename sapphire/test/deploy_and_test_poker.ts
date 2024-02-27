@@ -117,6 +117,8 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     let br_chips = await poker.bettingRoundChips(TABLE_ID, BETTING_ROUND_PREFLOP);
 
+    console.log("All Betting Round chips " + br_chips);
+
     for (const player_index of [0,1,2,3]) 
     {
       let chips = await poker.chips(await four_player_game_players[player_index].getAddress(), TABLE_ID);

@@ -215,6 +215,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
                 // big blinds
                 bettingRound.chips.push(table.bigBlind); // update the round array
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
+            } 
+            else 
+            {
+                // if you are not big or small blinds, push 0
+                bettingRound.chips.push(0);
             }
         }
 
