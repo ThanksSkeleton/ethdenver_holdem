@@ -107,15 +107,16 @@ function HashDecryptCard(salt, table_id, handnum, encrypted) {
 }
 
 async function TryTx(component, fun, args) {
+  let ret;
   try {
     let simret = await fun.staticCallResult.apply(fun.staticCallResult, args);
     console.log('tryTx simret', simret);
     component.spinner = true;
     let tx = await fun.apply(fun, args);
     console.log('tryTx tx', tx);
-    let ret = await tx.wait();
+    ret = await tx.wait();
     console.log('tryTx ret', ret);
-    return ret;
+    component.update();
   } catch (e) {
     console.log('tryTx ERR', e);
     if (e.reason) {
@@ -124,4 +125,5 @@ async function TryTx(component, fun, args) {
     console.log('tryTx ERR', e.reason);
   }
   component.spinner = false;
+  return ret;
 }

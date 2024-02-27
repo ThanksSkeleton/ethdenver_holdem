@@ -6,15 +6,14 @@
         <div class="flex w-full items-center justify-between space-x-6 p-6">
           <div class="flex-1 truncate">
             <div class="flex items-center space-x-3">
-              <h3 class="truncate text-sm font-medium text-gray-900">Jane Cooper (<% player %>)</h3>
+              <h3 class="truncate text-sm font-medium text-gray-900"><% player %></h3>
               <span
                 class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin</span>
             </div>
             <p class="mt-1 truncate text-sm text-gray-500">Regional Paradigm Technician</p>
           </div>
           <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300"
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=256&h=256&q=60"
-            alt="">
+            :src="'https://effigy.im/a/' + player + '.png'">
         </div>
       </li>
       <!-- More people... -->
@@ -58,10 +57,10 @@
           id="raiseAmount" type="text" placeholder="Raise Amount">
       </div>
     </div>
-    <div 
-      v-if="spinner"
+    <div v-if="spinner"
       class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-      <div class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
+      <div
+        class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
         Waiting for transaction...
       </div>
     </div>
@@ -114,37 +113,50 @@ var TableComponent = Vue.component("Table", {
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
-      this.chips = await this.contract.chips(this.account, this.table_index);
-      let table = await this.contract.tables(this.table_index);
-      this.table = {
-        index: i, state: table.state,
-        totalHands: table.totalHands, currentRound: table.currentRound,
-        buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-        bigBlind: table.bigBlind, token: table.token,
-        chips: this.chips
-      };
-      this.players = await this.contract.tablePlayers(this.table_index);
-      let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-      let salt = localStorage.getItem('salt:' + this.table_index);
-      this.cards = [];
-      for (let i = 0; i < cards.length; i++) {
-        let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
-        card = this.numToCard(card);
-        this.cards.push(card);
-      }
-      console.log('players', this.players);
+      this.contract.on([null], async (event) => {
+        console.log('event', event);
+        // await this.upda();
+      });
+
+      await this.update();
     } catch (e) {
       console.log('create ERR', e);
     }
   },
   methods: {
+    update: async function () {
+      console.log("update");
+      try {
+        this.chips = await this.contract.chips(this.account, this.table_index);
+        let table = await this.contract.tables(this.table_index);
+        this.table = {
+          index: i, state: table.state,
+          totalHands: table.totalHands, currentRound: table.currentRound,
+          buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
+          bigBlind: table.bigBlind, token: table.token,
+          chips: this.chips
+        };
+        this.players = await this.contract.tablePlayers(this.table_index);
+        let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+        let salt = localStorage.getItem('salt:' + this.table_index);
+        this.cards = [];
+        for (let i = 0; i < cards.length; i++) {
+          let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+          card = this.numToCard(card);
+          this.cards.push(card);
+        }
+        console.log('players', this.players);
+      } catch (e) {
+        console.log('create ERR', e);
+      }
+    },
     numToCard: function (num) {
       if (num == -1) return "eth_back.png";
 
       let suit = Math.floor(num / 13);
       let value = num % 13;
       let suits = ['H', 'D', 'C', 'S'];
-      let values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'J', 'Q', 'K', 'A'];
+      let values = ['2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K', 'A'];
       return values[value] + suits[suit] + ".png";
     },
     playHand: async function (action, raiseAmount) {

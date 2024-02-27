@@ -109,10 +109,10 @@
         </div>
       </div>
     </div>
-    <div 
-      v-if="spinner"
+    <div v-if="spinner"
       class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-      <div class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
+      <div
+        class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
         Waiting for transaction...
       </div>
     </div>
@@ -159,24 +159,34 @@ var NewGameComponent = Vue.component("NewGame", {
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
-      let totalTables = await this.contract.totalTables();
-      for (let i = 0; i < totalTables; i++) {
-        const table = await this.contract.tables(i);
-        const players = await this.contract.tablePlayers(i);
-        let chips = await this.contract.chips(this.account, i);
-        this.tables.push({
-          index: i, state: table.state,
-          totalHands: table.totalHands, currentRound: table.currentRound,
-          buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-          bigBlind: table.bigBlind, token: table.token,
-          chips: chips, players: players
-        });
-      }
+
+      await this.update();
     } catch (e) {
       console.log('create ERR', e);
     }
   },
   methods: {
+    update: async function () {
+      console.log("update");
+      try {
+        let totalTables = await this.contract.totalTables();
+        this.tables = [];
+        for (let i = 0; i < totalTables; i++) {
+          const table = await this.contract.tables(i);
+          const players = await this.contract.tablePlayers(i);
+          let chips = await this.contract.chips(this.account, i);
+          this.tables.push({
+            index: i, state: table.state,
+            totalHands: table.totalHands, currentRound: table.currentRound,
+            buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
+            bigBlind: table.bigBlind, token: table.token,
+            chips: chips, players: players
+          });
+        }
+      } catch (e) {
+        console.log('create ERR', e);
+      }
+    },
     create_game: async function () {
       console.log("create_game");
       await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 1, TOKEN]);
