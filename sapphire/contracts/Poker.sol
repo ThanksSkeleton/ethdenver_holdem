@@ -195,11 +195,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
         for (uint i=0; i < numPlayers; i++) {
             if (i == (numPlayers-1)) { // the last player
                 // small blinds
-                bettingRound.chips[i] = table.bigBlind / 2;
+                bettingRound.chips.push(table.bigBlind / 2);
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind / 2;
             } else if (i == (numPlayers-2)) { // the last second player
                 // big blinds
-                bettingRound.chips[i] = table.bigBlind; // update the round array
+                bettingRound.chips.push(table.bigBlind); // update the round array
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
             }
         }
