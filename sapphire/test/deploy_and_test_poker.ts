@@ -180,6 +180,44 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await summarize_chips_four_players();
   });
 
+
+  it('Four Player Game - Transition from Preflop to Flop', async () => 
+  {
+    await four_player_table_setup(); 
+
+    // Before Betting
+
+    let table = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table.currentBettingRound);
+
+    // Everyone Rasing
+
+    for (let [index, player] of four_player_game_players.entries()) 
+    {
+      console.log("Player Raising By 20")
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+      await summarize_chips_four_players();
+    }
+
+    // Players 1-3 calling
+
+    for (let [index, player] of four_player_game_players.entries()) 
+    {
+      if (index != 3) 
+      {
+        console.log("Player "+ (index+1) + " Calling")
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
+        await summarize_chips_four_players();
+      }
+    }
+
+    let table2 = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table2.currentBettingRound);
+
+    // After Betting
+    await summarize_chips_four_players();
+  });
+
 });
 
 // describe("zkWitches Contract - Joined Game", function () {

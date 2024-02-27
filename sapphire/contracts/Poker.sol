@@ -207,11 +207,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
     
         // initiate the small blind and the big blind
         for (uint i=0; i < numPlayers; i++) {
-            if (i == (numPlayers-1)) { // the last player
+            if (i == (numPlayers-2)) { // the second to last player, which gets the small blind
                 // small blinds
                 bettingRound.chips.push(table.bigBlind / 2);
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind / 2;
-            } else if (i == (numPlayers-2)) { // the last second player
+            } else if (i == (numPlayers-1)) { // the last player, which gets the big blind
                 // big blinds
                 bettingRound.chips.push(table.bigBlind); // update the round array
                 chips[bettingRound.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
@@ -354,46 +354,37 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
             // re initiate the table
             _reInitiateTable(_table, _tableId);
-        } else if (allChipsEqual) {
-            // all elements equal meaning nobody has raised
-            if (_table.currentBettingRound == BettingRound.AfterPreflop) {
-                // if nobody has raised and this is the final round then go to evaluation
+        } else if (
+        (allChipsEqual && _bettingRound.highestChip == 0 && _bettingRound.turn == n-1) // Scenario: Everyone has checked
+        || 
+        (allChipsEqual && _bettingRound.highestChip != 0)) // Pot is right and nonzero
+        { 
+            if (_table.currentBettingRound == BettingRound.AfterRiver) 
+            {
+                // TODO WIRE IN SHOWODOWN
+                
                 _table.state = TableState.Showdown;
 
                 emit TableShowdown(_tableId);
             } else {
-                // if nobody has raised and this is not the final round
-                // and this is the last player
-                // then just go the next round
+                _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
 
-                // check if this is the last player
-                // if this is not the last player then it might just be check
-                // so dont go to the next round
-                if (_bettingRound.turn == n-1) {
-                     _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
+                uint[] memory _chips = new uint[](n);
 
-                    uint[] memory _chips = new uint[](n);
+                // deal Community 
+                reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
 
-                    // deal Community 
-                    reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
-
-                    // initiate the next round
-                    bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
-                        state: true,
-                        turn : 0,
-                        players: _bettingRound.players, // all living players from the last round
-                        highestChip: 0,
-                        chips: _chips
-                    });
-                }
+                // initiate the next round
+                bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
+                    state: true,
+                    turn : 0,
+                    players: _bettingRound.players, // all living players from the last round
+                    highestChip: 0,
+                    chips: _chips
+                });
             }
-            
-        } else if (!allChipsEqual) {
-                // or if somebody has raised 
-                // ie. all values in the chips array are same then also stay in the same round
-
-                // just update the turn
-                _bettingRound.turn = _updateTurn(_bettingRound.turn, n);
+        } else {
+            _bettingRound.turn = _updateTurn(_bettingRound.turn, n);
         }
     }
 
