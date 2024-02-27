@@ -24,7 +24,7 @@ https://metadata.ens.domains/docs#/paths/~1%7BnetworkName%7D~1avatar~1%7Bname%7D
 https://testnet.explorer.sapphire.oasis.dev/address/0x669F46b55C7C2aC145eD57402943405BdF41d7E6/write-contract#address-tabs
 
 ## Poker
-https://testnet.explorer.sapphire.oasis.dev/address/0x75140f88b0F4B2fBC6DadC16CC51203ADB07fe36/write-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0x51a9355AC2F46CffEef33fA0dDB3d7457Eb07D36/write-contract#address-tabs
 
 
 ## Wallets
