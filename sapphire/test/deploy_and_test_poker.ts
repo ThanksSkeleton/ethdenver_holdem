@@ -123,7 +123,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     {
       let chips = await poker.chips(await four_player_game_players[player_index].getAddress(), TABLE_ID);
       console.log("Player " + (1 + player_index) + " Chips Remaining: "+ chips);
-      console.log("Player " + (1 + player_index) + " Chips Contributed To Pot: " + br_chips[player_index])
+      console.log("Player " + (1 + player_index) + " Chips Contributed To Pot this Betting Round: " + br_chips[player_index])
     }
 
     console.log("End Summary")
@@ -180,10 +180,14 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
   });
 
-
   it('Four Player Game - Transition from Preflop to Flop', async () => 
   {
     await four_player_table_setup(); 
+
+    console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
+
+    let preflop_community_card_0_before = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, 0);
+    console.log("Community Card: " + preflop_community_card_0_before[0] + " Valid?: " + preflop_community_card_0_before[1])
 
     // Before Betting
 
@@ -214,7 +218,17 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     let table2 = await poker.tables(TABLE_ID);
     console.log("Current Betting Round: " + table2.currentBettingRound);
 
-    // After Betting
+    for (let i in [0, 1, 2]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card: " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
+
+    let community_card_unexpected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, 3);
+    console.log("Community Card: " + community_card_unexpected[0] + " Valid?: " + community_card_unexpected[1])
+
+    // new round
+    console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
     await summarize_chips_four_players(Number(table2.currentBettingRound));
   });
 

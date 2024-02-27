@@ -6,6 +6,7 @@ contract PokerHandProvider {
     mapping(address => mapping(uint => uint)) internal salts;
 
     // actual encrypted cards don't need to be stored (no mapping)
+    // player address, table, hand
     mapping(address => mapping(uint => mapping(uint => EncryptedCards))) public encryptedPlayerCards;
 
     // playercards are kept, privately (so they can be revealed during showdown)
@@ -16,7 +17,7 @@ contract PokerHandProvider {
     mapping(uint => mapping(uint => CommunityCards)) internal communityCards;
 
     // table, hand, communityIndex, to CommunityCards Struct
-    mapping(uint => mapping(uint => mapping(uint => RevealedCommunityCard))) internal revealedCommunityCards;
+    mapping(uint => mapping(uint => mapping(uint => RevealedCommunityCard))) public revealedCommunityCards;
 
     // Encrypted by Hashing
     event EncryptedCardsEvent 
@@ -62,8 +63,6 @@ contract PokerHandProvider {
         uint card;
         bool valid;
     }
-
-
 
     // community_index: 0,1,2 = Flop 3 = Fold 4 = River
     function reveal_community_card(uint table_id, uint handNum, uint community_index) internal

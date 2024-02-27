@@ -367,12 +367,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
                 emit TableShowdown(_tableId);
             } else {
+                reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
+
                 _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
 
                 uint[] memory _chips = new uint[](n);
-
-                // deal Community 
-                reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
 
                 // initiate the next round
                 bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
@@ -384,6 +383,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
                 });
             }
         } else {
+            // Pot is not right OR Everyone is checking 
             _bettingRound.turn = _updateTurn(_bettingRound.turn, n);
         }
     }
