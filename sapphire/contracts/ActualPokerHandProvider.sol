@@ -18,7 +18,7 @@ contract ActualPokerHandProvider is PokerHandProvider
     // secretly store the community cards and the player cards, 
     // and broadcast the encrypted player cards 
     function populate_cards(uint table_id, uint handNum, address[] memory players) internal {
-        uint[] memory cards = generateCards(players.length);
+        uint[] memory cards = generateCards(players.length*2+5);
         for (uint player_index = 0; player_index < players.length; player_index++) {
             uint hole_1_index = player_index * 2; 
             uint hole_2_index = player_index * 2 + 1; 
