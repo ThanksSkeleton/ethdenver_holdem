@@ -11,6 +11,8 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Poker, PokerToken } from "../typechain-types/contracts";
 import { ContractFactory, Contract, Signer } from "ethers";
+const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
+
 
 
 import chaiAsPromised = require("chai-as-promised");
@@ -65,9 +67,16 @@ describe('Hello World Function', () => {
 
     // confirm that there are cards
     let p1_encrypted_cards = await poker.encryptedPlayerCards(await player1.getAddress(), TABLE_ID, HAND_ID);
-    console.log("p1" + p1_encrypted_cards);
-    let p2_encrypted_cards = await poker.encryptedPlayerCards(await player2.getAddress(), TABLE_ID, HAND_ID);  
-    console.log("p2" + p2_encrypted_cards);
+    console.log("p1 - encrypted" + p1_encrypted_cards);
+
+    let p1_decrypted_cards = decrypt_hole_cards(player1_salt, TABLE_ID, HAND_ID, p1_encrypted_cards);
+    console.log("p1 - decrypted" + p1_decrypted_cards);
+
+    let p2_encrypted_cards = await poker.encryptedPlayerCards(await player2.getAddress(), TABLE_ID, HAND_ID);
+    console.log("p2 - encrypted" + p2_encrypted_cards);
+
+    let p2_decrypted_cards = decrypt_hole_cards(player2_salt, TABLE_ID, HAND_ID, p2_encrypted_cards);
+    console.log("p2 - decrypted" + p2_decrypted_cards);
   });
 });
 
