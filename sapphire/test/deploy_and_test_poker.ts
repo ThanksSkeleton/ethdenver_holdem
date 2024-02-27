@@ -107,17 +107,25 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player4).buyIn(TABLE_ID, BUY_IN_AMOUNT, player4_salt);
   }
 
-  async function summarize_chips_four_player() 
+  async function summarize_chips_four_players() 
   {
     console.log("Chip Summary")
+
+    let br = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+
+    console.log("br.state " + br.state, "br.turn " + br.turn, "br.highestchip " + br.highestChip);
+
+    let br_chips = await poker.bettingRoundChips(TABLE_ID, BETTING_ROUND_PREFLOP);
+
     for (const player_index of [0,1,2,3]) 
     {
-      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
-      console.log("Player " + (1 + player_index) +  Chips: "+ chips);
+      let chips = await poker.chips(await four_player_game_players[player_index].getAddress(), TABLE_ID);
+      console.log("Player " + (1 + player_index) + " Chips Remaining: "+ chips);
+      console.log("Player " + (1 + player_index) + " Chips Contributed To Pot: " + br_chips[player_index])
     }
   }
 
-  it('Two Player Game Gives them decryptable encrypted Cards', async () => {
+  it('Two Player Game Gives them decryptable encrypted Cards, + Raise', async () => {
     await two_player_table_setup(); 
 
     // confirm that there are cards
@@ -132,22 +140,16 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     let p2_decrypted_cards = decrypt_hole_cards(player2_salt, TABLE_ID, HAND_ID, p2_encrypted_cards);
     console.log("p2 - decrypted" + p2_decrypted_cards);
+
+    await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
   });
 
   it('Four Player Game - Betting in a circle', async () => 
   {
     await four_player_table_setup(); 
 
-    let br = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
-    console.log("br.state " + br.state, "br.turn " + br.turn, "br.highestchip " + br.highestChip);
-    
-    // Before we start betting
-
-    for (const player of four_player_game_players) 
-    {
-      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
-      console.log("Player Chips: "+ chips);
-    }
+    // Before Betting
+    await summarize_chips_four_players();
 
     // Everyone Betting
 
@@ -157,25 +159,11 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     {
       console.log("player raising 20")
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, EVERYONE_RAISES_20);
-      // Check chips
-      for (const player of four_player_game_players) 
-      {
-        let chips = await poker.chips(await player.getAddress(), TABLE_ID);
-        console.log("Player Chips: "+ chips);
-      }
+      summarize_chips_four_players();
     }
 
     // After Betting
-
-    let br2 = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
-    console.log("br.state " + br2.state, "br.turn " + br2.turn, "br.highestchip " + br2.highestChip);
-
-    for (const player of four_player_game_players) 
-    {
-      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
-      console.log("Player Chips: "+ chips);
-    }
-
+    summarize_chips_four_players();
   });
 
 });
