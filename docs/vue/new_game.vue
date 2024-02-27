@@ -130,7 +130,7 @@ var NewGameComponent = Vue.component("NewGame", {
       this.account = res[0];
       console.log('request accounts', res);
       this.lastResponse = '';
-      await this.add_chain();
+      await AddChain(this.provider);
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
@@ -174,26 +174,6 @@ var NewGameComponent = Vue.component("NewGame", {
         console.log('join_game ERR', e);
       }
     },
-    add_chain: async function () {
-      try {
-        const res = await this.provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: '0x5aff',
-              chainName: 'Oasis Sapphire Testnet logoOasis Sapphire Testnet',
-              blockExplorerUrls: ['https://testnet.explorer.sapphire.oasis.dev/'],
-              nativeCurrency: { symbol: 'TEST', decimals: 18 },
-              rpcUrls: ['https://testnet.sapphire.oasis.dev'],
-            },
-          ],
-        });
-        console.log('add', res);
-        this.lastResponse = res;
-      } catch (e) {
-        console.log('ADD ERR', e);
-      }
-    }
   },
 });
 </script>

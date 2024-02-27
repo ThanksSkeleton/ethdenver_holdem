@@ -1,5 +1,5 @@
-const POKER = "0x4c4B3671c42c6E780ec5799A1612d8D5305ff6cd";
-const TOKEN = "0x39d61f9540D84D5E6920B06e973CEE19D79FeFbD";
+const POKER = "0x75140f88b0F4B2fBC6DadC16CC51203ADB07fe36";
+const TOKEN = "0x669F46b55C7C2aC145eD57402943405BdF41d7E6";
 
 var ethers;
 var MaxUint256;
@@ -26,6 +26,7 @@ async function TokenContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
 
     abi = [
+        "function mint(address, uint256)",
         "function balanceOf(address) public view returns (uint256)",
         "function allowance(address owner, address spender) public view returns (uint256)",
         "function approve(address spender, uint256 value) returns (bool)",
@@ -33,3 +34,23 @@ async function TokenContract(provider) {
     const signer = await provider.getSigner();
     return new ethers.Contract(TOKEN, abi, signer);
 }
+
+async function AddChain(provider) {
+    try {
+      const res = await provider.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: '0x5aff',
+            chainName: 'Oasis Sapphire Testnet',
+            blockExplorerUrls: ['https://testnet.explorer.sapphire.oasis.dev/'],
+            nativeCurrency: { symbol: 'TEST', decimals: 18 },
+            rpcUrls: ['https://testnet.sapphire.oasis.dev'],
+          },
+        ],
+      });
+      console.log('add', res);
+    } catch (e) {
+      console.log('ADD ERR', e);
+    }
+  }
