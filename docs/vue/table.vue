@@ -32,28 +32,28 @@
         <!-- More products... -->
       </div>
       <div class="flex items-center justify-between my-4">
-        <button v-on:click="playHand(ActionFold, 0)"
-          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)"
+          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
           Fold
         </button>
-        <button v-on:click="playHand(ActionCheck, 0)"
-          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        <button :disabled='!isMyTurn' v-on:click="playHand(ActionCheck, 0)"
+          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
           Check
         </button>
-        <button v-on:click="playHand(ActionCall, 0)"
-          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        <button :disabled='!isMyTurn' v-on:click="playHand(ActionCall, 0)"
+          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
           Call
         </button>
-        <button v-on:click="playHand(ActionRaise, raiseAmount)"
-          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)"
+          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
           Raise
         </button>
-        <input v-model.trim="raiseAmount"
-          class="mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        <input :disabled='!isMyTurn' v-model.trim="raiseAmount"
+          class="disabled:bg-gray-300 mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           id="raiseAmount" type="text" placeholder="Raise Amount">
       </div>
     </div>
@@ -87,6 +87,7 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      isMyTurn: false,
       error: null,
       spinner: false,
       raiseAmount: 0,
@@ -100,7 +101,11 @@ var TableComponent = Vue.component("Table", {
       ActionCall: 0,
       ActionRaise: 1,
       ActionCheck: 2,
-      ActionFold: 3
+      ActionFold: 3,
+      BRAfterPreflop: 0,
+      BRAfterFlop: 1,
+      BRAfterTurn: 2,
+      BRAfterRiver: 3
     };
   },
   created: async function () {
@@ -146,6 +151,9 @@ var TableComponent = Vue.component("Table", {
           this.cards.push(card);
         }
         console.log('players', this.players);
+        let { state, turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
+        this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
+
       } catch (e) {
         console.log('create ERR', e);
       }

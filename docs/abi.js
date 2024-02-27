@@ -1,4 +1,4 @@
-const POKER = "0xA75897a7635d31F6804A6560f3c6fBA64De94D2e";
+const POKER = "0x7c73ea6D3ECc1a068eD7Ae6dAE6e210873af776e";
 const TOKEN = "0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85";
 
 var ethers;
@@ -6,6 +6,7 @@ var MaxUint256;
 var sapphire;
 var Provider;
 var Account;
+var xmtp;
 
 async function Init() {
   if (!sapphire) {
@@ -14,6 +15,10 @@ async function Init() {
   if (!ethers) {
     ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm");
     MaxUint256 = ethers.MaxUint256;
+  }
+
+  if (!xmtp) {
+    xmtp = await import("https://cdn.jsdelivr.net/npm/@xmtp/xmtp-js@11.3.14/+esm");
   }
 
   if (!Provider) {
@@ -50,10 +55,22 @@ async function PokerContract(provider) {
         "function totalTables() public view returns (uint256)",
         "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
         "function encryptedPlayerCards(address player, uint256 tableId, uint256 hand) public view returns (bytes, bytes)",
+        "function bettingRounds(uint256 tableId, uint8 bettingRound) public view returns (tuple(bool state, uint256 turn, uint256 highestChip))",
     ];
+
     let signer = await provider.getSigner();
-    // signer = sapphire.wrap(signer);
     return new ethers.Contract(POKER, abi, signer);
+}
+
+async function SecretPokerContract(provider, secure) {
+    provider = new ethers.BrowserProvider(window.ethereum);
+
+    abi = [
+        "function buyIn(uint256 tableId, uint256 amount, uint256 salt)",
+    ];
+    
+    let signer = await provider.getSigner();
+    return new ethers.Contract(POKER, abi, sapphire.wrap(signer))
 }
 
 async function TokenContract(provider) {
@@ -109,8 +126,8 @@ function HashDecryptCard(salt, table_id, handnum, encrypted) {
 async function TryTx(component, fun, args) {
   let ret;
   try {
-    let simret = await fun.staticCallResult.apply(fun.staticCallResult, args);
-    console.log('tryTx simret', simret);
+    // let simret = await fun.staticCall.apply(fun.staticCallResult, args);
+    // console.log('tryTx simret', simret);
     component.spinner = true;
     let tx = await fun.apply(fun, args);
     console.log('tryTx tx', tx);
@@ -121,6 +138,8 @@ async function TryTx(component, fun, args) {
     console.log('tryTx ERR', e);
     if (e.reason) {
       component.error = e.reason;
+    } else {
+      component.error = "Unknown revert reason.";
     }
     console.log('tryTx ERR', e.reason);
   }
