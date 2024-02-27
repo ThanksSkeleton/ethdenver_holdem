@@ -21,10 +21,10 @@ https://metadata.ens.domains/docs#/paths/~1%7BnetworkName%7D~1avatar~1%7Bname%7D
 ## Testnet Deployments:
 
 ## Token
-https://testnet.explorer.sapphire.oasis.dev/address/0x669F46b55C7C2aC145eD57402943405BdF41d7E6/write-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85/write-contract#address-tabs
 
 ## Poker
-https://testnet.explorer.sapphire.oasis.dev/address/0x51a9355AC2F46CffEef33fA0dDB3d7457Eb07D36/write-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0xA75897a7635d31F6804A6560f3c6fBA64De94D2e/write-contract#address-tabs
 
 
 ## Wallets
@@ -32,3 +32,4 @@ https://testnet.explorer.sapphire.oasis.dev/address/0x51a9355AC2F46CffEef33fA0dD
 Dominic : 0xA1Da0F4F20a804E77c7cA9B394AC7E6E64d7e86d
 Chris   : 0x7945b0db8Dda46Fc9C6B58dC7bBff90c45721d90
 Greg    : 0x830Dd5c538c6F4d6e2ff8529A7D3eC97d08B0BFd
+Josh    : 0x12BAD0d981283f7bEc366F3684B9F622319274c4

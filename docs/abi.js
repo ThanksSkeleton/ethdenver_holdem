@@ -1,12 +1,37 @@
-const POKER = "0x51a9355AC2F46CffEef33fA0dDB3d7457Eb07D36";
-const TOKEN = "0x669F46b55C7C2aC145eD57402943405BdF41d7E6";
+const POKER = "0xA75897a7635d31F6804A6560f3c6fBA64De94D2e";
+const TOKEN = "0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85";
 
 var ethers;
 var MaxUint256;
-import("https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm").then((mod) => {
-    ethers = mod;
+var sapphire;
+var Provider;
+var Account;
+
+async function Init() {
+  if (!sapphire) {
+    sapphire = await import("https://cdn.jsdelivr.net/npm/@oasisprotocol/sapphire-paratime@1.3.2/+esm");
+  }
+  if (!ethers) {
+    ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.11.1/+esm");
     MaxUint256 = ethers.MaxUint256;
-});
+  }
+
+  if (!Provider) {
+    await MMSDK.connect();
+    Provider = await MMSDK.getProvider();
+    await AddChain(Provider);
+  }
+
+  if (!Account) {
+    const res = await Provider.request({
+      method: 'eth_requestAccounts',
+      params: [],
+    });
+    Account = res[0];
+  }
+
+  return { provider: Provider, account: Account };
+}
 
 function NewSalt() {
     return ethers.toQuantity(ethers.randomBytes(32));
@@ -23,7 +48,8 @@ async function PokerContract(provider) {
         "function totalTables() public view returns (uint256)",
         "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
     ];
-    const signer = await provider.getSigner();
+    let signer = await provider.getSigner();
+    // signer = sapphire.wrap(signer);
     return new ethers.Contract(POKER, abi, signer);
 }
 

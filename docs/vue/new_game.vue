@@ -129,16 +129,10 @@ var NewGameComponent = Vue.component("NewGame", {
   created: async function () {
     console.log("created");
     try {
-      await MMSDK.connect();
-      this.provider = await MMSDK.getProvider();
-      const res = await this.provider.request({
-        method: 'eth_requestAccounts',
-        params: [],
-      });
-      this.account = res[0];
-      console.log('request accounts', res);
-      this.lastResponse = '';
-      await AddChain(this.provider);
+      let { provider, account } = await Init();
+      this.account = account;
+      this.provider = provider;
+
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
@@ -174,14 +168,17 @@ var NewGameComponent = Vue.component("NewGame", {
       localStorage.setItem("salt:" + num, salt);
       let table = this.tables[num];
       try {
+        let join_tx;
         let allowance = await this.token.allowance(this.account, POKER);
         if (allowance < table.buyInAmount) {
           let tx = await this.token.approve(POKER, MaxUint256);
           let ok = await tx.wait();
-          if (ok) await this.contract.buyIn(num, table.buyInAmount, salt);
+          if (ok) join_tx = await this.contract.buyIn(num, table.buyInAmount, salt);
         } else {
-          await this.contract.buyIn(num, table.buyInAmount, salt);
+          join_tx = await this.contract.buyIn(num, table.buyInAmount, salt);
         }
+        let ret = await join_tx.wait();
+        console.log('join_game', ret);
       } catch (e) {
         console.log('join_game ERR', e);
       }

@@ -34,16 +34,12 @@ var FishFaucetComponent = Vue.component("FishFaucet", {
   created: async function () {
     console.log("created");
     try {
-      await MMSDK.connect();
-      this.provider = await MMSDK.getProvider();
-      const res = await this.provider.request({
-        method: 'eth_requestAccounts',
-        params: [],
-      });
-      this.account = res[0];
+      let { provider, account } = await Init();
+      this.account = account;
+      this.provider = provider;
+
       this.address = this.account;
       console.log('request accounts', res);
-      this.lastResponse = '';
       await AddChain();
       this.token = await TokenContract(this.provider);
     } catch (e) {
