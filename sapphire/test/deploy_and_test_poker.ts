@@ -20,20 +20,60 @@ import chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 chai.config.includeStack = true;
 
-describe('Hello World Function', () => {
+describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () => {
   let poker : Poker;
   let poker_token: PokerToken;
 
   let creator : Signer;
+
   let player1 : Signer;
   let player2 : Signer;
+  let player3 : Signer;
+  let player4 : Signer;
+
+  let stranger : Signer;
+
+  let two_player_game_players : Signer[];
+  let four_player_game_players : Signer[];
+
+
+  const MINIMUM_BUY_IN_AMOUNT = 200;
+  const TWO_PLAYERS = 2;
+  const FOUR_PLAYERS = 4;
+  const BIG_BLIND = 2;
+
+  const TABLE_ID = 0;
+  const BUY_IN_AMOUNT = 300;
+  
+  const player1_salt = 1;
+  const player2_salt = 2;
+  const player3_salt = 3;
+  const player4_salt = 4;
+
+  const BETTING_ROUND_PREFLOP = 0;
+  const BETTING_ROUND_FLOP = 1;
+  const BETTING_ROUND_TURN = 2;
+  const BETTING_ROUND_RIVER = 3;
+
+  const PLAYER_ACTION_CALL = 0;
+  const PLAYER_ACTION_RAISE = 1;
+  const PLAYER_ACTION_CHECK = 2;
+  const PLAYER_ACTION_FOLD = 3;
+
+  const HAND_ID = 0;
 
   beforeEach(async function () {
 
-    const [crx, px1, px2, px3, px4, px5] = await ethers.getSigners();
+    const [crx, px1, px2, px3, px4, stx] = await ethers.getSigners();
     creator = crx;
     player1 = px1;
     player2 = px2;
+    player3 = px3;
+    player4 = px4;
+    stranger = stx;
+
+    two_player_game_players = [player1, player2];
+    four_player_game_players = [player1, player2, player3, player4]
 
     let factory1 = await ethers.getContractFactory('Poker');
     poker = await factory1.deploy() as Poker;
@@ -44,26 +84,41 @@ describe('Hello World Function', () => {
     await poker_token.waitForDeployment();
 
     poker_token.mint(await player1.getAddress(), 1000);
-    poker_token.mint(await player2.getAddress(), 1000);    
+    poker_token.mint(await player2.getAddress(), 1000);
+    poker_token.mint(await player3.getAddress(), 1000);    
+    poker_token.mint(await player4.getAddress(), 1000);    
   });
 
-  it('connecting with two players', async () => {
-    const MINIMUM_BUY_IN_AMOUNT = 200;
-    const MAX_PLAYERS = 2;
-    const BIG_BLIND = 2;
-
-    await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, MAX_PLAYERS, BIG_BLIND, await poker_token.getAddress());
-
-    const TABLE_ID = 0;
-    const BUY_IN_AMOUNT = 300;
-    
-    const player1_salt = 1;
-    const player2_salt = 2;
-
-    const HAND_ID = 0;
+  async function two_player_table_setup() 
+  {
+    await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, TWO_PLAYERS, BIG_BLIND, await poker_token.getAddress());
 
     await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
     await poker.connect(player2).buyIn(TABLE_ID, BUY_IN_AMOUNT, player2_salt);
+  }
+
+  async function four_player_table_setup() 
+  {
+    await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, FOUR_PLAYERS, BIG_BLIND, await poker_token.getAddress());
+
+    await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
+    await poker.connect(player2).buyIn(TABLE_ID, BUY_IN_AMOUNT, player2_salt);
+    await poker.connect(player3).buyIn(TABLE_ID, BUY_IN_AMOUNT, player3_salt);
+    await poker.connect(player4).buyIn(TABLE_ID, BUY_IN_AMOUNT, player4_salt);
+  }
+
+  async function summarize_chips_four_player() 
+  {
+    console.log("Chip Summary")
+    for (const player_index of [0,1,2,3]) 
+    {
+      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
+      console.log("Player " + (1 + player_index) +  Chips: "+ chips);
+    }
+  }
+
+  it('Two Player Game Gives them decryptable encrypted Cards', async () => {
+    await two_player_table_setup(); 
 
     // confirm that there are cards
     let p1_encrypted_cards = await poker.encryptedPlayerCards(await player1.getAddress(), TABLE_ID, HAND_ID);
@@ -78,6 +133,51 @@ describe('Hello World Function', () => {
     let p2_decrypted_cards = decrypt_hole_cards(player2_salt, TABLE_ID, HAND_ID, p2_encrypted_cards);
     console.log("p2 - decrypted" + p2_decrypted_cards);
   });
+
+  it('Four Player Game - Betting in a circle', async () => 
+  {
+    await four_player_table_setup(); 
+
+    let br = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+    console.log("br.state " + br.state, "br.turn " + br.turn, "br.highestchip " + br.highestChip);
+    
+    // Before we start betting
+
+    for (const player of four_player_game_players) 
+    {
+      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
+      console.log("Player Chips: "+ chips);
+    }
+
+    // Everyone Betting
+
+    let EVERYONE_RAISES_20 = 20;
+
+    for (const player of four_player_game_players) 
+    {
+      console.log("player raising 20")
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, EVERYONE_RAISES_20);
+      // Check chips
+      for (const player of four_player_game_players) 
+      {
+        let chips = await poker.chips(await player.getAddress(), TABLE_ID);
+        console.log("Player Chips: "+ chips);
+      }
+    }
+
+    // After Betting
+
+    let br2 = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+    console.log("br.state " + br2.state, "br.turn " + br2.turn, "br.highestchip " + br2.highestChip);
+
+    for (const player of four_player_game_players) 
+    {
+      let chips = await poker.chips(await player.getAddress(), TABLE_ID);
+      console.log("Player Chips: "+ chips);
+    }
+
+  });
+
 });
 
 // describe("zkWitches Contract - Joined Game", function () {
