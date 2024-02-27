@@ -1,12 +1,35 @@
 // Usage: pnpm hardhat run --network <network> scripts/run-vigil.ts
 
-import { ethers } from 'hardhat';
+// import { expect } from "chai";
+// import chai = require("chai");
 
-async function main() {
-  const poker_mock_factory = await ethers.getContractFactory('Poker');
-  const poker_mock = await poker_mock_factory.deploy();
-  console.log('Poker deployed to:', await poker_mock.getAddress());
-}
+// import { ethers } from 'hardhat';
+// import chaiAsPromised = require("chai-as-promised");
+
+import {
+  time,
+  loadFixture,
+} from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
+// chai.config.includeStack = true;
+
+describe('Hello World Function', () => {
+  it('returns "Hello, World!"', () => {
+      expect(1).to.equal(1);
+  });
+});
+
+// describe("zkWitches Contract - Joined Game", function () {
+
+
+// async function main() {
+//   const poker_mock_factory = await ethers.getContractFactory('Poker');
+//   const poker_mock = await poker_mock_factory.deploy();
+//   console.log('Poker deployed to:', await poker_mock.getAddress());
+// }
 
 //   import { expect } from "chai";
 //   import chai = require("chai");
@@ -392,7 +415,7 @@ async function main() {
 //   };
 // }
 
-  main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
+// main().catch((error) => {
+//   console.error(error);
+//   process.exitCode = 1;
+// });
