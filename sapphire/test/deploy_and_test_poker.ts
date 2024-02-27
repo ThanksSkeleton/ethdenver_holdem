@@ -1,22 +1,67 @@
+
 // Usage: pnpm hardhat run --network <network> scripts/run-vigil.ts
-
-// import { expect } from "chai";
-// import chai = require("chai");
-
-// import { ethers } from 'hardhat';
-// import chaiAsPromised = require("chai-as-promised");
 
 import {
   time,
   loadFixture,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import chai = require("chai");
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { Poker, PokerToken } from "../typechain-types/contracts";
+import { ContractFactory, Contract, Signer } from "ethers";
 
-// chai.config.includeStack = true;
+
+import chaiAsPromised = require("chai-as-promised");
+
+chai.use(chaiAsPromised);
+chai.config.includeStack = true;
 
 describe('Hello World Function', () => {
+
+
+  let poker : Poker;
+  let poker_token: PokerToken;
+
+  let creator : Signer;
+  let player1 : Signer;
+  let player2 : Signer;
+
+  beforeEach(async function () {
+
+    const [crx, px1, px2, px3, px4, px5] = await ethers.getSigners();
+    creator = crx;
+    player1 = px1;
+    player2 = px2;
+
+    let factory1 = await ethers.getContractFactory('Poker');
+    poker = await factory1.deploy() as Poker;
+    await poker.waitForDeployment();
+
+    let factory2 = await ethers.getContractFactory('PokerToken');
+    poker_token = await factory2.deploy(poker.getAddress()) as PokerToken;
+    await poker_token.waitForDeployment();
+
+    poker_token.mint(await player1.getAddress(), 1000);
+    poker_token.mint(await player2.getAddress(), 1000);
+
+    const MINIMUM_BUY_IN_AMOUNT = 200;
+    const MAX_PLAYERS = 2;
+    const BIG_BLIND = 2;
+
+    await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, MAX_PLAYERS, BIG_BLIND, await poker_token.getAddress());
+
+    const TABLE_ID = 0;
+    const BUY_IN_AMOUNT = 300;
+    
+    const player1_salt = 1;
+    const player2_salt = 2;
+
+    await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
+    await poker.connect(player2).buyIn(TABLE_ID, BUY_IN_AMOUNT, player2_salt);
+  });
+
   it('returns "Hello, World!"', () => {
       expect(1).to.equal(1);
   });
@@ -369,25 +414,25 @@ describe('Hello World Function', () => {
 // //     //   console.log(`Event details:`, event);
 // //     // });
 
-// //     // async function findSecretCard() {
-// //     //   // Listen for the Keccak_Encrypt event
-// //     junk.on('Keccak_Encrypt', (encrypted) => {
-// //       console.log('Encrypted event detected:', encrypted);
+    // async function findSecretCard() {
+    //   // Listen for the Keccak_Encrypt event
+    // junk.on('Keccak_Encrypt', (encrypted) => {
+    //   console.log('Encrypted event detected:', encrypted);
   
-// //       const secretKey: string = "0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
+    //   const secretKey: string = "0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
 
-// //       // Loop through possible cards (0-51) to find the secret card
-// //       for (let card = 0; card <= 51; card++) {
-// //         // Generate the keccak256 hash of the concatenated secret key and card
-// //         console.log("generating keccak hash")
-// //         const hash = ethers.keccak256(ethers.solidityPacked(['bytes', 'uint8'], [secretKey, card]));
+    //   // Loop through possible cards (0-51) to find the secret card
+    //   for (let card = 0; card <= 51; card++) {
+    //     // Generate the keccak256 hash of the concatenated secret key and card
+    //     console.log("generating keccak hash")
+    //     const hash = ethers.keccak256(ethers.solidityPacked(['bytes', 'uint8'], [secretKey, card]));
   
-// //         // Check if the generated hash matches the encrypted data from the event
-// //         if (hash === ethers.hexlify(encrypted)) {
-// //           console.log(`Found secret card: ${card}`);
-// //           return card; // Exiting the function as we found the matching card
-// //         }
-// //       }
+    //     // Check if the generated hash matches the encrypted data from the event
+    //     if (hash === ethers.hexlify(encrypted)) {
+    //       console.log(`Found secret card: ${card}`);
+    //       return card; // Exiting the function as we found the matching card
+    //     }
+    //   }
   
 // //       console.log('Secret card not found.');
 // //     });
