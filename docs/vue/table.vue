@@ -32,6 +32,52 @@
 
         <!-- More products... -->
       </div>
+      <div class="flex items-center justify-between my-4">
+        <button v-on:click="playHand(ActionFold, 0)"
+          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Fold
+        </button>
+        <button v-on:click="playHand(ActionCheck, 0)"
+          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Check
+        </button>
+        <button v-on:click="playHand(ActionCall, 0)"
+          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Call
+        </button>
+        <button v-on:click="playHand(ActionRaise, raiseAmount)"
+          class="mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Raise
+        </button>
+        <input v-model.trim="raiseAmount"
+          class="mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="raiseAmount" type="text" placeholder="Raise Amount">
+      </div>
+    </div>
+    <div 
+      v-if="spinner"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
+        Waiting for transaction...
+      </div>
+    </div>
+    <div v-if="error != null"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-8 rounded-lg">
+        <h1 class="text-2xl font-bold text-red-500">Error</h1>
+        <p class="text-lg text-red-500">
+          <% error %>
+        </p>
+        <button v-on:click="error = null"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Close
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -42,6 +88,9 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      error: null,
+      spinner: false,
+      raiseAmount: 0,
       account: "loading",
       chips: "loading",
       table: "loading",
@@ -49,6 +98,10 @@ var TableComponent = Vue.component("Table", {
       table: "loading",
       players: [],
       cards: ["eth_back.png", "eth_back.png"],
+      ActionCall: 0,
+      ActionRaise: 1,
+      ActionCheck: 2,
+      ActionFold: 3
     };
   },
   created: async function () {
@@ -93,6 +146,12 @@ var TableComponent = Vue.component("Table", {
       let suits = ['H', 'D', 'C', 'S'];
       let values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'J', 'Q', 'K', 'A'];
       return values[value] + suits[suit] + ".png";
+    },
+    playHand: async function (action, raiseAmount) {
+      console.log('playHand');
+      // let tx = await this.contract.playHand(this.table_index, action, raiseAmount);
+      let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
+      console.log('playHand', ret);
     },
   },
 });

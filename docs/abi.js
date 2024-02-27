@@ -41,6 +41,8 @@ async function PokerContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
 
     abi = [
+        "function playHand(uint256 tableId, uint8 action, uint256 raiseAmount)",
+        "function withdrawChips(uint256 amount, uint256 tableId)",
         "function chips(address player, uint256 tableId) public view returns (uint256)",
         "function buyIn(uint256 tableId, uint256 amount, uint256 salt)",
         "function tablePlayers(uint256) public view returns (address[])",
@@ -102,4 +104,24 @@ function HashDecryptCard(salt, table_id, handnum, encrypted) {
 
   console.log('No matching card found.');
   return -1; // Indicate that no matching card was found
+}
+
+async function TryTx(component, fun, args) {
+  try {
+    let simret = await fun.staticCallResult.apply(fun.staticCallResult, args);
+    console.log('tryTx simret', simret);
+    component.spinner = true;
+    let tx = await fun.apply(fun, args);
+    console.log('tryTx tx', tx);
+    let ret = await tx.wait();
+    console.log('tryTx ret', ret);
+    return ret;
+  } catch (e) {
+    console.log('tryTx ERR', e);
+    if (e.reason) {
+      component.error = e.reason;
+    }
+    console.log('tryTx ERR', e.reason);
+  }
+  component.spinner = false;
 }

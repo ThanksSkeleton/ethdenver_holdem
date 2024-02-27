@@ -109,6 +109,27 @@
         </div>
       </div>
     </div>
+    <div 
+      v-if="spinner"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
+        Waiting for transaction...
+      </div>
+    </div>
+    <div v-if="error != null"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-8 rounded-lg">
+        <h1 class="text-2xl font-bold text-red-500">Error</h1>
+        <p class="text-lg text-red-500">
+          <% error %>
+        </p>
+        <button v-on:click="error = null"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -118,6 +139,8 @@ var NewGameComponent = Vue.component("NewGame", {
   delimiters: ["<%", "%>"],
   data: () => {
     return {
+      spinner: false,
+      error: null,
       table_name: "",
       player_count: "4",
       buy_in: "100",
@@ -156,11 +179,7 @@ var NewGameComponent = Vue.component("NewGame", {
   methods: {
     create_game: async function () {
       console.log("create_game");
-      try {
-        await this.contract.createTable(this.buy_in, this.player_count, 1, TOKEN);
-      } catch (e) {
-        console.log('request accounts ERR', e);
-      }
+      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 1, TOKEN]);
     },
     join_game: async function (num) {
       console.log("join_game", num);
@@ -168,16 +187,11 @@ var NewGameComponent = Vue.component("NewGame", {
       localStorage.setItem("salt:" + num, salt);
       let table = this.tables[num];
       try {
-        let join_tx;
         let allowance = await this.token.allowance(this.account, POKER);
         if (allowance < table.buyInAmount) {
-          let tx = await this.token.approve(POKER, MaxUint256);
-          let ok = await tx.wait();
-          if (ok) join_tx = await this.contract.buyIn(num, table.buyInAmount, salt);
-        } else {
-          join_tx = await this.contract.buyIn(num, table.buyInAmount, salt);
+          await TryTx(this, this.token.approve, [POKER, MaxUint256]);
         }
-        let ret = await join_tx.wait();
+        let ret = await TryTx(this, this.contract.buyIn, [num, table.buyInAmount, salt]);
         console.log('join_game', ret);
       } catch (e) {
         console.log('join_game ERR', e);
