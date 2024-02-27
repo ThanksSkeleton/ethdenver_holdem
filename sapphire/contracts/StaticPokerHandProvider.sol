@@ -54,7 +54,7 @@ contract StaticPokerHandProvider is PokerHandProvider
         );
     }
 
-    function generateCards(uint howMany) private view returns (uint[] memory) {
+    function generateCards(uint howMany) private pure returns (uint[] memory) {
         uint[] memory toReturn = new uint[](howMany);
         uint count = 0;
         

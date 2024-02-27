@@ -159,6 +159,7 @@ var NewGameComponent = Vue.component("NewGame", {
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
+      this.secure_contract = await SecretPokerContract(this.provider);
 
       await this.update();
     } catch (e) {
@@ -201,7 +202,7 @@ var NewGameComponent = Vue.component("NewGame", {
         if (allowance < table.buyInAmount) {
           await TryTx(this, this.token.approve, [POKER, MaxUint256]);
         }
-        let ret = await TryTx(this, this.contract.buyIn, [num, table.buyInAmount, salt]);
+        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
         console.log('join_game', ret);
       } catch (e) {
         console.log('join_game ERR', e);
