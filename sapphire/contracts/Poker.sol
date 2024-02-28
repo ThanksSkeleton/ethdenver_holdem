@@ -99,6 +99,28 @@ contract Poker is Ownable, StaticPokerHandProvider {
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
+    enum HandType {
+        HighCard,       // Lowest value hand
+        OnePair,        // Two cards of the same value
+        TwoPair,        // Two different pairs
+        ThreeOfAKind,   // Three cards of the same value
+        Straight,       // All five cards in consecutive value order
+        Flush,          // All five cards of the same suit, not in sequence
+        FullHouse,      // Three of a kind with a pair
+        FourOfAKind,    // Four cards of the same value
+        StraightFlush,  // Five cards in sequence, all of the same suit
+        RoyalFlush      // Ten, Jack, Queen, King, Ace, in the same suit
+    }
+
+    struct ShowdownHand 
+    {
+        HandType handType;
+        // Remember that the user has to present these in canonical order
+        uint[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
+            //  You must choose your own cards + community cards obviously
+        uint[5] actualCards; // Those same cards (the actual cards) in canonical order
+    }
+
     uint public totalTables;
     // id => Table
     mapping(uint => Table) public tables;
@@ -109,6 +131,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
     mapping(uint => mapping(BettingRound => BettingRoundInfo)) public bettingRounds;
     // player => tableId to requestLeave bool
     mapping(address  => mapping(uint => bool)) public requestLeave;
+    // player => tableId => handId => ShowdownHand
+    mapping(address => mapping(uint => mapping(uint => ShowdownHand))) public showdownHands;
 
     constructor() Ownable(msg.sender) 
     {
@@ -304,6 +328,23 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         _finishRound(_tableId, table);       
     }
+
+    function addShowDownHand(uint _tableId, uint _handId, ShowdownHand memory showdownHand) external 
+	{
+		// determine correct table mode
+		// determine player index
+		// confirm that player has not folded
+		// get available_cards for that player uint[7] = [hole1, hole2, comm1, comm2, comm3, comm4, comm5]
+		// confirm that the cards for each index match
+		// confirm that HandRecognize(cards) 
+		// dont confirm - is player - don't care if you are even a player
+		// dont confirm - already exists - you can overwrite your showdownhand if you want
+		
+		// actually add the showdown hand
+		
+		//if allHandsAdded
+		// StartShowdown(allhands[])
+	}
 
     /// @dev this method will be called by the offchain node with the
     /// keys of each card hash & the card,  dealt in the dealCards function

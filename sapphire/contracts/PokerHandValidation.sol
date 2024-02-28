@@ -92,4 +92,40 @@ contract PokerHandValidation {
     // Client Side Code Work
     // Given a list of 7 cards, identify the indexes that make the best hand
     // (Pre existing library? Linked in discord) 
+
+
+	// function HandCardsExist(uint[7] availableCards, uint[5] cardIndexes, uint[5] mycards) -> bool 
+	// {
+	// 	// confirm that for each card index, availablecards[cardIndexes[i]] == mycards[i]] 
+	// }
+	
+	// function HandRecognize(HandType handType, uint[5] cards) -> bool //This hand is actually as described
+	// {
+	// 	// TODO
+	// 	return true;
+	// }
+	
+	// function StartShowdown(ShowdownHand_HeadToHead[] allhands) -> address[] // return the winners
+	// { 
+	// 	// rank hands by HandType, then by internal cards (by the specific rule for that handtype)
+		
+	// 	besthandsbyType ShowdownHand_HeadToHead[] = BestHandTypes(allhands);
+	// 	if bestHandsbyType.length == 1 
+	// 	{
+	// 		return bestHandsbyType[0].address;
+	// 	} 
+		
+	// 	return BestHand_SameTypes(besthandsbyType);
+	// }
+	
+	// function BestHandTypes(ShowdownHand_HeadToHead[] allhands) -> ShowdownHand_HeadToHead[] 
+	// {
+	
+	// }
+	
+	// function BestHand_SameTypes(ShowdownHand_HeadToHead[] contender_hands) -> address[] // HANDLE TIES?
+	// {
+	
+	// }
+
 }
