@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 // ChatGPT is helping me a lot with this
 
-contract PokerHandValidation { // TODO - convert to library to help bytecode size
+library PokerHandValidation { 
 
     // Solidity Work
     // User is going to claim they have a poker hand

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //import "./ActualPokerHandProvider.sol";
 import "./StaticPokerHandProvider.sol";
+import "./PokerHandValidation.sol";
 
 // Terminology Relationship
 // Every cycle where all cards are dealt is called a "Hand". This is sometimes called a ROUND but we will use Hand.
@@ -99,22 +100,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
-    enum HandType {
-        HighCard,       // Lowest value hand
-        OnePair,        // Two cards of the same value
-        TwoPair,        // Two different pairs
-        ThreeOfAKind,   // Three cards of the same value
-        Straight,       // All five cards in consecutive value order
-        Flush,          // All five cards of the same suit, not in sequence
-        FullHouse,      // Three of a kind with a pair
-        FourOfAKind,    // Four cards of the same value
-        StraightFlush,  // Five cards in sequence, all of the same suit
-        RoyalFlush      // Ten, Jack, Queen, King, Ace, in the same suit
-    }
-
     struct ShowdownHand 
     {
-        HandType handType;
+        PokerHandValidation.HandType handType;
         // Remember that the user has to present these in canonical order
         uint[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
             //  You must choose your own cards + community cards obviously
@@ -489,7 +477,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         }
     }
 
-    function handle_leaving_players(uint tableId) internal returns (address[] memory)
+    function handle_leaving_players(uint tableId) internal view returns (address[] memory)
     {
         Table storage table = tables[tableId];
 
@@ -531,7 +519,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
   // Gets the next turn
   // loops around
   // skips skippable 
-  function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
+    function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
         uint numPlayers = shouldSkip.length;
         require(currentTurn < numPlayers, "Invalid currentTurn index");
 
@@ -545,7 +533,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             nextIndex = (nextIndex + 1) % numPlayers; // Move to the next index, loop back if at the end
         }
         
-        return nextIndex;
+        return nextIndex;   
     }
 
     // Function to find the first and last active player indices
