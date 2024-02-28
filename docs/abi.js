@@ -58,6 +58,7 @@ async function PokerContract(provider) {
         "function bettingRounds(uint256 tableId, uint8 bettingRound) public view returns (tuple(bool state, uint256 turn, uint256 highestChip))",
         "function bettingRoundChips(uint256 tableId, uint8 bettingRound) public view returns (uint256[])",
         "function bettingRoundPlayers(uint256 tableId, uint8 bettingRound) public view returns (address[])",
+        "function revealedCommunityCards(uint256 tableId, uint256 hand, uint256 card) public view returns (tuple(uint256 card, bool valid))",
     ];
 
     let signer = await provider.getSigner();

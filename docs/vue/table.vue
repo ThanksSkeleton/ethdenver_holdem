@@ -1,37 +1,64 @@
 <template id="table">
   <div class="overflow-hidden px-3 py-5 flex flex-col justify-around">
-    <h1 class="text-3xl font-bold tracking-tight text-white">Game Number <% table.totalHands %> - Pot value: <% table.pot %> FISH</h1>
+    <h1 class="text-3xl font-bold tracking-tight text-white">Game Number <% table.totalHands %> - Pot value: <% table.pot
+          %> FISH</h1>
     <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()"
         class="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
         <div class="flex w-full items-center justify-between space-x-6 p-6">
           <div class="flex-1 truncate">
             <div class="flex items-center space-x-3">
-              <h3 class="truncate text-sm font-medium text-gray-900"><% i + 1 %>. <% player %></h3>
+              <h3 class="truncate text-sm font-medium text-gray-900">
+                <% i + 1 %>. <% player %>
+              </h3>
               <span
                 class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin</span>
             </div>
-            <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[i] %></p>
+            <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[i] %>
+            </p>
           </div>
-          <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300"
-            :src="'https://effigy.im/a/' + player + '.png'">
+          <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300" :src="'https://effigy.im/a/' + player + '.png'">
+        </div>
+        <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+          <div v-for="card in cards" class="group relative">
+            <div
+              class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-10">
+              <img :src="'./assets/img/cards/eth_back.png'"
+                class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+            </div>
+          </div>
         </div>
       </li>
-      <!-- More people... -->
     </ul>
+
+
     <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-      <h2 class="text-2xl font-bold tracking-tight text-gray-900"><% this.player_index + 1 %>. You (<% this.account %>)</h2>
-      <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %></p>
+      <h2 class="text-2xl font-bold tracking-tight text-gray-900">Community Cards</h2>
+      <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+        <div v-for="card in communityCards" class="group relative">
+          <div
+            class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-20">
+            <img :src="'./assets/img/cards/' + card"
+              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
+      <h2 class="text-2xl font-bold tracking-tight text-gray-900">
+        <% this.player_index + 1 %>. You (<% this.account %>)
+      </h2>
+      <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %>
+      </p>
       <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
         <div v-for="card in cards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
-            <img :src="'./assets/img/cards/' + card" alt="Backside"
+            <img :src="'./assets/img/cards/' + card"
               class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
-
-        <!-- More products... -->
       </div>
       <div class="flex items-center justify-between my-4">
         <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)"
@@ -89,6 +116,7 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      communityCards: [],
       player_index: 0,
       highestChip: 0,
       bettingRoundChips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -181,8 +209,20 @@ var TableComponent = Vue.component("Table", {
             newBettingRoundChips.push(Number(bettingRoundChips[i]));
           }
           this.bettingRoundChips = newBettingRoundChips;
-        } 
+        }
         console.log('bettingRoundChips', this.bettingRoundChips);
+
+        let communityCards = [];
+        let valid = true;
+        while (valid) {
+          let card = await this.contract.revealedCommunityCards(this.table_index, this.table.totalHands, communityCards.length);
+          valid = card.valid;
+          if (valid) {
+            communityCards.push(this.numToCard(Number(card.card)));
+          }
+        };
+        this.communityCards = communityCards;
+
       } catch (e) {
         console.log('create ERR', e);
       }
