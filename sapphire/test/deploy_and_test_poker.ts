@@ -13,8 +13,6 @@ import { Poker, PokerToken } from "../typechain-types/contracts";
 import { ContractFactory, Contract, Signer } from "ethers";
 const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
 
-
-
 import chaiAsPromised = require("chai-as-promised");
 
 chai.use(chaiAsPromised);
@@ -146,6 +144,18 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     console.log("End Summary")
   }
+
+  it('First Player leaves 2p game that has not started', async () => 
+  {
+    await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, TWO_PLAYERS, BIG_BLIND, await poker_token.getAddress());
+
+    await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
+    await poker.connect(player1).requestToLeave(TABLE_ID);
+
+    let table_players = await poker.tablePlayers(TABLE_ID)
+    expect(table_players.length).to.equal(0, "Player left game");
+  })
+
 
   it('Two Player Game Gives them decryptable encrypted Cards, + Raise', async () => {
     await two_player_table_setup(); 

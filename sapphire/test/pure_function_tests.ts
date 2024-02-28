@@ -156,4 +156,24 @@ import {
             expect(firstActivePlayerIndex).to.equal(2, "First active player index should be 2 for the only active player");
             expect(lastActivePlayerIndex).to.equal(2, "Last active player index should also be 2 for the only active player");
           });
+
+          it("Should return correct array with some addresses removed", async function () {
+            // Obtaining addresses using 'getAddress()' method
+            const addresses = [
+                await player1.getAddress(), 
+                await player2.getAddress(), 
+                await player3.getAddress(), 
+                await player4.getAddress()
+            ];
+            const shouldBeRemoved = [false, true, false, true]; // Indicating which addresses to remove
+    
+            // Expected result: an array with the addresses of player1 and player3, as player2 and player4 are marked to be removed
+            const expectedAddresses = [await player1.getAddress(), await player3.getAddress()];
+    
+            // Calling the removeAddresses function with the test data
+            const result = await poker.removeAddresses(addresses, shouldBeRemoved);
+    
+            // Asserting that the function result matches the expected output
+            expect(result).to.deep.equal(expectedAddresses);
+        });
   });

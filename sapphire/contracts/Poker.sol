@@ -107,6 +107,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
     mapping(address => mapping(uint => uint)) public chips;
     // tableId => bettingRoundNum => BettingRound
     mapping(uint => mapping(BettingRound => BettingRoundInfo)) public bettingRounds;
+    // player => tableId to requestLeave bool
+    mapping(address  => mapping(uint => bool)) public requestLeave;
 
     constructor() Ownable(msg.sender) 
     {
@@ -178,6 +180,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         // add player to table
         table.players.push(msg.sender);
+        // player is affirmatively choosing to join the table
+        requestLeave[msg.sender][_tableId] = false;
 
         register_player(_tableId, salt);
 
@@ -222,6 +226,25 @@ contract Poker is Ownable, StaticPokerHandProvider {
         table.pot += table.bigBlind + (table.bigBlind/2);
 
         populate_cards(_tableId, table.totalHands, table.players);
+    }
+
+    // request to request
+    // handled immediately if the game is not active
+    // handled automatically at the start of the next round otherwise
+    function requestToLeave(uint _tableId) public
+    {
+        Table storage table = tables[_tableId];
+        //You can pointlessly request to leave a table you're not at, doesn't matter        
+        requestLeave[msg.sender][_tableId] = true;
+
+        if (table.state == TableState.Active || table.state == TableState.Showdown) 
+        {
+            // You can't leave during the game
+            // Leaves are automatically handled at the start of the next hand
+        } else {
+            // Pregame you can leave
+            table.players = handle_leaving_players(_tableId);
+        }
     }
 
     /// @param _raiseAmount only required in case of raise. Else put zero. This is the amount you are putting in addition to what you have already put in this round
@@ -413,16 +436,29 @@ contract Poker is Ownable, StaticPokerHandProvider {
         // initiate the first round
         BettingRoundInfo storage round = bettingRounds[_tableId][BettingRound.AfterPreflop];
         round.highestChip = _table.bigBlind;
-    } 
 
-    function _allElementsEqual(uint[] memory arr) internal pure returns (bool val) {
-        uint x = arr[0];
-        val = true;
-        for (uint i=0; i < arr.length; i++) {
-            if (arr[i] != x) {
-                val = false;
-            }
+        _table.players = handle_leaving_players(_tableId);
+        
+        // TODO - "Move Dealer Button" aka shuffle players
+
+        // if nobody left we can immediately start the next game
+        if (_table.players.length == _table.maxPlayers)
+        {
+            dealCards(_tableId);
         }
+    }
+
+    function handle_leaving_players(uint tableId) internal returns (address[] memory)
+    {
+        Table storage table = tables[tableId];
+
+        bool[] memory boolsArray = new bool[](table.players.length);
+
+        for (uint i = 0; i < table.players.length; i++) {
+            boolsArray[i] = requestLeave[table.players[i]][tableId];
+        } 
+
+        return removeAddresses(table.players, boolsArray);
     }
 
     // Method to check if all non-folded players have the same amount of chips
@@ -451,6 +487,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
         return true;
     }
 
+  // Gets the next turn
+  // loops around
+  // skips skippable 
   function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
         uint numPlayers = shouldSkip.length;
         require(currentTurn < numPlayers, "Invalid currentTurn index");
@@ -469,6 +508,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }
 
     // Function to find the first and last active player indices
+    // if first == last there is also only one player
     function first_last_active_player(bool[] memory has_folded) public pure returns (uint first_active_player_index, uint last_active_player_index) {
         first_active_player_index = type(uint).max; // Initialize with max value as a flag for no active player found yet
         last_active_player_index = 0;
@@ -493,6 +533,33 @@ contract Poker is Ownable, StaticPokerHandProvider {
         }
 
         return (first_active_player_index, last_active_player_index);
+    }
+
+    function removeAddresses(address[] memory addresses, bool[] memory shouldBeRemoved) public pure returns (address[] memory) {
+        require(addresses.length == shouldBeRemoved.length, "Arrays must be of the same length");
+
+        uint256 count = 0;
+
+        // First, count how many addresses we will have in the new array
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (!shouldBeRemoved[i]) {
+                count++;
+            }
+        }
+
+        // Initialize a new array of the determined size
+        address[] memory filteredAddresses = new address[](count);
+        uint256 j = 0;
+
+        // Fill the new array with addresses that should not be removed
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (!shouldBeRemoved[i]) {
+                filteredAddresses[j] = addresses[i];
+                j++;
+            }
+        }
+
+        return filteredAddresses;
     }
 
     function createBoolArray(uint n) public pure returns (bool[] memory) {
