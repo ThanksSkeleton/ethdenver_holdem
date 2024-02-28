@@ -138,7 +138,8 @@ var TableComponent = Vue.component("Table", {
       BRAfterPreflop: 0,
       BRAfterFlop: 1,
       BRAfterTurn: 2,
-      BRAfterRiver: 3
+      BRAfterRiver: 3,
+      updating: false,
     };
   },
   created: async function () {
@@ -155,14 +156,22 @@ var TableComponent = Vue.component("Table", {
         console.log('event', event);
         this.update();
       });
+      window.setInterval(() => {
+        console.log('timer');
+        this.update();
+      }, 1000);
+
 
       await this.update();
+
     } catch (e) {
       console.log('create ERR', e);
     }
   },
   methods: {
     update: async function () {
+      if (this.updating) return;
+      this.updating = true;
       console.log("update");
       try {
         this.chips = await this.contract.chips(this.account, this.table_index);
@@ -184,10 +193,12 @@ var TableComponent = Vue.component("Table", {
             break;
           }
         }
+        
         let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
         let salt = localStorage.getItem('salt:' + this.table_index);
         if (salt == null) {
           this.error = 'salt is null';
+          this.updating = false;
           return;
         }
         this.cards = [];
@@ -226,6 +237,7 @@ var TableComponent = Vue.component("Table", {
       } catch (e) {
         console.log('create ERR', e);
       }
+      this.updating = false;
     },
     numToCard: function (num) {
       if (num == -1) return "eth_back.png";
