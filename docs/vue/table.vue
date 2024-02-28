@@ -173,6 +173,7 @@ var TableComponent = Vue.component("Table", {
         console.log("bettingRounds", turn, Number(turn), highestChip)
         this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
         this.highestChip = Number(highestChip);
+        console.log('highestChip', this.highestChip);
         let bettingRoundChips = await this.contract.bettingRoundChips(this.table_index, this.table.currentRound);
         if (bettingRoundChips.length == this.players.length) {
           let newBettingRoundChips = [];

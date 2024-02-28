@@ -175,12 +175,12 @@ var NewGameComponent = Vue.component("NewGame", {
       console.log("update");
       try {
         let totalTables = await this.contract.totalTables();
-        this.tables = [];
+        let tables = [];
         for (let i = 0; i < totalTables; i++) {
           const table = await this.contract.tables(i);
           const players = await this.contract.tablePlayers(i);
           let chips = await this.contract.chips(this.account, i);
-          this.tables.push({
+          tables.push({
             index: i, state: table.state,
             totalHands: table.totalHands, currentRound: table.currentRound,
             buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
@@ -188,6 +188,7 @@ var NewGameComponent = Vue.component("NewGame", {
             chips: chips, players: players
           });
         }
+        this.tables = tables;
       } catch (e) {
         console.log('create ERR', e);
       }
