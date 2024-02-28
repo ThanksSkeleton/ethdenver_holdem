@@ -376,8 +376,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
                     turn : 0,
                     highestChip: 0,
 
-                    chips: _bettingRound.chips,
+                    chips: createZeroArray(_bettingRound.chips.length),
                     has_folded: _bettingRound.has_folded
+
                 });
             }
         } else {
@@ -398,11 +399,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
         {
             reveal_community_card(table_id, handNum, 3);
         } 
-        else if (round == BettingRound.AfterRiver) 
+        else if (round == BettingRound.AfterTurn) 
         {
             reveal_community_card(table_id, handNum, 4);
         } else {
-            // should not be executed in this case!
+            // AfterRiver - no new cards, function should not be executed in this case!
         }
     }   
 
@@ -504,6 +505,14 @@ contract Poker is Ownable, StaticPokerHandProvider {
         bool[] memory arr = new bool[](n);
         for (uint i = 0; i < n; i++) {
             arr[i] = false;
+        }
+        return arr;
+    }
+
+    function createZeroArray(uint n) public pure returns (uint[] memory) {
+        uint[] memory arr = new uint[](n);
+        for (uint i = 0; i < n; i++) {
+            arr[i] = 0;
         }
         return arr;
     }

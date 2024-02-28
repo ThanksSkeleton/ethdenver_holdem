@@ -107,6 +107,24 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player4).buyIn(TABLE_ID, BUY_IN_AMOUNT, player4_salt);
   }
 
+  async function four_player_advance_to_flop() 
+  {
+    await four_player_table_setup()
+
+    for (let [index, player] of four_player_game_players.entries()) 
+    {
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+    }
+
+    for (let [index, player] of four_player_game_players.entries()) 
+    {
+      if (index != 3) 
+      {
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
+      }
+    }
+  }
+
   async function summarize_chips_four_players(betting_round: number) 
   {
     console.log("Chip Summary")
@@ -198,66 +216,62 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   it('Four Player Game - Transition from Preflop to Flop', async () => 
   {
-    await four_player_table_setup(); 
+    await four_player_advance_to_flop(); 
 
     console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
 
-    let preflop_community_card_0_before = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, 0);
-    console.log("Community Card: " + preflop_community_card_0_before[0] + " Valid?: " + preflop_community_card_0_before[1])
+    console.log
 
-    // Before Betting
-
+    for (let i in [0, 1, 2, 3, 4]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
     let table = await poker.tables(TABLE_ID);
     console.log("Current Betting Round: " + table.currentBettingRound);
-
-    for (let i in [0, 1, 2, 3, 4]) 
-    {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
-      console.log("Community Card: " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
-    }
-
-    // Everyone Rasing
-
-    for (let [index, player] of four_player_game_players.entries()) 
-    {
-      console.log("Player Raising By 20")
-      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
-      await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
-    }
-
-    // Players 1-3 calling
-
-    for (let [index, player] of four_player_game_players.entries()) 
-    {
-      if (index != 3) 
-      {
-        console.log("Player "+ (index+1) + " Calling")
-        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
-        await summarize_chips_four_players(BETTING_ROUND_PREFLOP);
-      }
-    }
-
-    let table2 = await poker.tables(TABLE_ID);
-    console.log("Current Betting Round: " + table2.currentBettingRound);
-
-    for (let i in [0, 1, 2, 3, 4]) 
-    {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
-      console.log("Community Card: " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
-    }
+    console.log("*")
 
     for (let player of four_player_game_players) 
     {
         await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0)
     }
 
+    for (let i in [0, 1, 2, 3, 4]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
+    let table2 = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table2.currentBettingRound);
+    console.log("*")
 
-    let community_card_unexpected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, 3);
-    console.log("Community Card: " + community_card_unexpected[0] + " Valid?: " + community_card_unexpected[1])
+    for (let player of four_player_game_players) 
+    {
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0)
+    }
 
-    // new round
-    console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
-    await summarize_chips_four_players(Number(table2.currentBettingRound));
+    for (let i in [0, 1, 2, 3, 4]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
+    let table3 = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table3.currentBettingRound);
+    console.log("*")
+
+    for (let player of four_player_game_players) 
+    {
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0)
+    }
+
+    for (let i in [0, 1, 2, 3, 4]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
+    let table4 = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table4.currentBettingRound);
+    console.log("*")
   });
 
   it('Four Player Game - Player 1 Folds', async () => 
