@@ -89,7 +89,7 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <% table.chips %>
                     </td>
-                    <td v-if="table.chips == 0"
+                    <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
                       class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                       <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
                         Join Table
@@ -155,10 +155,14 @@ var NewGameComponent = Vue.component("NewGame", {
       let { provider, account } = await Init();
       this.account = account;
       this.provider = provider;
-
+      
       this.token = await TokenContract(this.provider);
       this.balance = await this.token.balanceOf(this.account);
       this.contract = await PokerContract(this.provider);
+      this.contract.on([null], async (event) => {
+        console.log('event', event);
+        this.update();
+      });
       this.secure_contract = await SecretPokerContract(this.provider);
 
       await this.update();
@@ -190,7 +194,7 @@ var NewGameComponent = Vue.component("NewGame", {
     },
     create_game: async function () {
       console.log("create_game");
-      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 1, TOKEN]);
+      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
     join_game: async function (num) {
       console.log("join_game", num);

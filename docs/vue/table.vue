@@ -1,16 +1,17 @@
 <template id="table">
   <div class="overflow-hidden px-3 py-5 flex flex-col justify-around">
+    <h1 class="text-3xl font-bold tracking-tight text-white">Game Number <% table.totalHands %> - Pot value: <% table.pot %> FISH</h1>
     <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <li v-for="player in players" v-if="player.toLowerCase() != account.toLowerCase()"
+      <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()"
         class="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
         <div class="flex w-full items-center justify-between space-x-6 p-6">
           <div class="flex-1 truncate">
             <div class="flex items-center space-x-3">
-              <h3 class="truncate text-sm font-medium text-gray-900"><% player %></h3>
+              <h3 class="truncate text-sm font-medium text-gray-900"><% i + 1 %>. <% player %></h3>
               <span
                 class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin</span>
             </div>
-            <p class="mt-1 truncate text-sm text-gray-500">Regional Paradigm Technician</p>
+            <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[i] %></p>
           </div>
           <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300"
             :src="'https://effigy.im/a/' + player + '.png'">
@@ -19,7 +20,8 @@
       <!-- More people... -->
     </ul>
     <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-      <h2 class="text-2xl font-bold tracking-tight text-gray-900">You (<% this.account %>)</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-gray-900"><% this.player_index + 1 %>. You (<% this.account %>)</h2>
+      <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %></p>
       <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
         <div v-for="card in cards" class="group relative">
           <div
@@ -37,15 +39,15 @@
           type="button">
           Fold
         </button>
-        <button :disabled='!isMyTurn' v-on:click="playHand(ActionCheck, 0)"
+        <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)"
           class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
           Check
         </button>
-        <button :disabled='!isMyTurn' v-on:click="playHand(ActionCall, 0)"
-          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)"
+          class="whitespace-nowrap disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="button">
-          Call
+          Call (<% highestChip - bettingRoundChips[player_index] %>)
         </button>
         <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)"
           class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -87,6 +89,9 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      player_index: 0,
+      highestChip: 0,
+      bettingRoundChips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       isMyTurn: false,
       error: null,
       spinner: false,
@@ -120,7 +125,7 @@ var TableComponent = Vue.component("Table", {
       this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
-        // await this.upda();
+        this.update();
       });
 
       await this.update();
@@ -142,18 +147,41 @@ var TableComponent = Vue.component("Table", {
           chips: this.chips
         };
         this.players = await this.contract.tablePlayers(this.table_index);
+        console.log('players', this.players);
+
+        for (let i = 0; i < this.players.length; i++) {
+          console.log('player', i, this.players[i], this.account);
+          if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
+            this.player_index = i;
+            break;
+          }
+        }
         let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
         let salt = localStorage.getItem('salt:' + this.table_index);
+        if (salt == null) {
+          this.error = 'salt is null';
+          return;
+        }
         this.cards = [];
         for (let i = 0; i < cards.length; i++) {
           let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
           card = this.numToCard(card);
           this.cards.push(card);
         }
-        console.log('players', this.players);
-        let { state, turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
-        this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
 
+        let { state, turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
+        console.log("bettingRounds", turn, Number(turn), highestChip)
+        this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
+        this.highestChip = Number(highestChip);
+        let bettingRoundChips = await this.contract.bettingRoundChips(this.table_index, this.table.currentRound);
+        if (bettingRoundChips.length == this.players.length) {
+          let newBettingRoundChips = [];
+          for (let i = 0; i < bettingRoundChips.length; i++) {
+            newBettingRoundChips.push(Number(bettingRoundChips[i]));
+          }
+          this.bettingRoundChips = newBettingRoundChips;
+        } 
+        console.log('bettingRoundChips', this.bettingRoundChips);
       } catch (e) {
         console.log('create ERR', e);
       }

@@ -14,6 +14,7 @@ contract PokerToken is ERC20, Ownable {
         _mint(0x830Dd5c538c6F4d6e2ff8529A7D3eC97d08B0BFd, 1000);
         _mint(0x040BE01bC181FA0851ba2Db5DD98f539CFf5d8F7, 1000);
         _mint(0x12BAD0d981283f7bEc366F3684B9F622319274c4, 1000);
+        _mint(0x13837BC453aeA16A87d9dD51da4914A43B4354D0, 1000);
     }
 
     function setPoker(address _poker) public onlyOwner {
