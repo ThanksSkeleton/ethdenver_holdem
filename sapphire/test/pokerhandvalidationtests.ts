@@ -22,6 +22,7 @@ import {
   
   describe('Poker Hand Validation Tests', () => {
     let poker : Poker;
+    let lib : PokerHandValidation;
     let poker_token: PokerToken;
   
     let creator : Signer;
@@ -78,7 +79,7 @@ import {
       four_player_game_players = [player1, player2, player3, player4]
   
       let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-      let lib = await factoryLib.deploy() as PokerHandValidation;
+      lib = await factoryLib.deploy() as PokerHandValidation;
       let lib_deployed = await lib.waitForDeployment();
   
   
