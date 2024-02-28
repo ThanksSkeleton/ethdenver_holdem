@@ -210,6 +210,12 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     let table = await poker.tables(TABLE_ID);
     console.log("Current Betting Round: " + table.currentBettingRound);
 
+    for (let i in [0, 1, 2, 3, 4]) 
+    {
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      console.log("Community Card: " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
+    }
+
     // Everyone Rasing
 
     for (let [index, player] of four_player_game_players.entries()) 
@@ -234,11 +240,17 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     let table2 = await poker.tables(TABLE_ID);
     console.log("Current Betting Round: " + table2.currentBettingRound);
 
-    for (let i in [0, 1, 2]) 
+    for (let i in [0, 1, 2, 3, 4]) 
     {
       let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
       console.log("Community Card: " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
     }
+
+    for (let player of four_player_game_players) 
+    {
+        await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0)
+    }
+
 
     let community_card_unexpected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, 3);
     console.log("Community Card: " + community_card_unexpected[0] + " Valid?: " + community_card_unexpected[1])
