@@ -92,7 +92,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }
 
     struct BettingRoundInfo {
-        bool state; // state of the betting round, if this is active or not
         uint turn; // an index on the players array, the player who has the current turn
         uint highestChip; // the current highest chip to be called in the round. 
 
@@ -199,7 +198,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
         // initiate the first betting round
         BettingRoundInfo storage bettingRound = bettingRounds[_tableId][BettingRound.AfterPreflop];
 
-        bettingRound.state = true;
         bettingRound.highestChip = table.bigBlind;
         bettingRound.has_folded = createBoolArray(numPlayers);
     
@@ -276,11 +274,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
             bettingRound.highestChip = proposedAmount;
 
         } else if (_action == PlayerAction.Fold) {
-            // in case of folding
-            /// remove the player from the players & chips array for this round
+            bettingRound.has_folded[bettingRound.turn] = true;
 
             // TODO new fold logic
-
         }
 
         _finishRound(_tableId, table);       
@@ -372,7 +368,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
                 // initiate the next round
                 bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
-                    state: true,
                     turn : 0,
                     highestChip: 0,
 
@@ -417,7 +412,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         // initiate the first round
         BettingRoundInfo storage round = bettingRounds[_tableId][BettingRound.AfterPreflop];
-        round.state = true;
         round.highestChip = _table.bigBlind;
     } 
 

@@ -284,7 +284,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     console.log("br.state " + br_before.state, "br.turn " + br_before.turn, "br.highestchip " + br_before.highestChip);
 
-    await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+    await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_FOLD, 0);
     await poker.connect(player2).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
     await poker.connect(player3).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
     await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
@@ -292,6 +292,9 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     let br_after = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
 
     console.log("br.state " + br_after.state, "br.turn " + br_after.turn, "br.highestchip " + br_after.highestChip);
+
+    expect(br_after.turn).to.equal(1, "after round of betting with player1 fold - active player should have index 1 (player2)");
+
   });
 
 });
