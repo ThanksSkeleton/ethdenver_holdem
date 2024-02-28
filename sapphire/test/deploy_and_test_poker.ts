@@ -145,6 +145,22 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     let p2_decrypted_cards = decrypt_hole_cards(player2_salt, TABLE_ID, HAND_ID, p2_encrypted_cards);
     console.log("p2 - decrypted" + p2_decrypted_cards);
 
+    let br_chips = await poker.bettingRoundChips(TABLE_ID, 0);
+    console.log("All Betting Round chips " + br_chips);
+
+    for (const player_index of [0,1]) 
+    {
+      let chips = await poker.chips(await two_player_game_players[player_index].getAddress(), TABLE_ID);
+      console.log("Player " + (1 + player_index) + " Chips Remaining: "+ chips);
+      console.log("Player " + (1 + player_index) + " Chips Contributed To Pot this Betting Round: " + br_chips[player_index])
+    }
+
+    let table = await poker.tables(TABLE_ID);
+    console.log("Current Betting Round: " + table.currentBettingRound);
+
+    let betting_round = await poker.bettingRounds(TABLE_ID, 0);
+    console.log("Current player turn " + betting_round.turn);
+
     await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
   });
 
@@ -230,6 +246,26 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     // new round
     console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
     await summarize_chips_four_players(Number(table2.currentBettingRound));
+  });
+
+  it('Four Player Game - Player 1 Folds', async () => 
+  {
+    await four_player_table_setup(); 
+
+    // Everyone Rasing
+
+    let br_before = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+
+    console.log("br.state " + br_before.state, "br.turn " + br_before.turn, "br.highestchip " + br_before.highestChip);
+
+    await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+    await poker.connect(player2).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+    await poker.connect(player3).playHand(TABLE_ID, PLAYER_ACTION_CALL, 0);
+    await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
+
+    let br_after = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+
+    console.log("br.state " + br_after.state, "br.turn " + br_after.turn, "br.highestchip " + br_after.highestChip);
   });
 
 });
