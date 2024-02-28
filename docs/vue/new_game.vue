@@ -209,6 +209,7 @@ var NewGameComponent = Vue.component("NewGame", {
         }
         let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
         console.log('join_game', ret);
+        router.push({ path: '/table/' + num });
       } catch (e) {
         console.log('join_game ERR', e);
       }
