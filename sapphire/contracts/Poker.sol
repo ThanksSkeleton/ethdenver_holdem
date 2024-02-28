@@ -100,10 +100,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
-    // Alternative 1. use a mapping and player counter
-    // Alternative 2. move it out of the struct
-    // Alter
-
     uint public totalTables;
     // id => Table
     mapping(uint => Table) public tables;
@@ -297,7 +293,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @notice only send the keys & cards of the players who are still living
     function showdown(uint _tableId, uint[] memory _keys, PlayerCards[] memory _cards) external onlyOwner {
         Table storage table = tables[_tableId];
-        BettingRoundInfo memory bettingRound = bettingRounds[_tableId][BettingRound.AfterRiver];
+        // BettingRoundInfo memory bettingRound = bettingRounds[_tableId][BettingRound.AfterRiver];
 
         require(table.state == TableState.Showdown);
 
