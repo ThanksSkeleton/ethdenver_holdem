@@ -156,10 +156,12 @@ var TableComponent = Vue.component("Table", {
         console.log('event', event);
         this.update();
       });
-      window.setInterval(() => {
-        console.log('timer');
-        this.update();
-      }, 1000);
+      if (!this.timer) {
+        this.timer = window.setInterval(() => {
+          console.log('timer');
+          this.update();
+        }, 10000);
+      }
 
 
       await this.update();
@@ -208,7 +210,7 @@ var TableComponent = Vue.component("Table", {
           this.cards.push(card);
         }
 
-        let { state, turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
+        let { turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
         console.log("bettingRounds", turn, Number(turn), highestChip)
         this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
         this.highestChip = Number(highestChip);
