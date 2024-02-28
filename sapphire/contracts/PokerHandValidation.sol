@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 // ChatGPT is helping me a lot with this
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library PokerHandValidation { 
 
@@ -28,6 +29,62 @@ library PokerHandValidation {
     // Given a list of 7 cards, identify the indexes that make the best hand
     // (Pre existing library? Linked in discord) 
 
+
+    enum BettingRound 
+    {
+        AfterPreflop,
+        AfterFlop,
+        AfterTurn,
+        AfterRiver
+    }
+
+    enum TableState {
+        Active, 
+        Inactive, // Awaiting Admin to Deal the Hole Cards
+        Showdown 
+    }
+
+    enum PlayerAction {
+        Call,
+        Raise,
+        Check,
+        Fold
+    }
+
+    event NewTableCreated(uint tableId, Table table);
+    event NewBuyIn(uint tableId, address player, uint amount);
+    event BettingRoundOver(uint tableId, uint round);
+    event TableShowdown(uint tableId);
+
+    struct Table {
+        TableState state;
+        uint totalHands; // total Hands till now
+        BettingRound currentBettingRound; // index of the current round
+        uint buyInAmount;
+        uint maxPlayers;
+        address[] players;
+        uint pot;
+        uint bigBlind;
+        IERC20 token; // the token to be used to play in the table
+    }
+
+    struct BettingRoundInfo {
+        uint turn; // an index on the players array, the player who has the current turn
+        uint highestChip; // the current highest chip to be called in the round. 
+
+        bool[] has_folded; // player flag for having folded
+        uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
+    }
+
+    struct ShowdownHand 
+    {
+        PokerHandValidation.HandType handType;
+        // Remember that the user has to present these in canonical order
+        uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
+            //  You must choose your own cards + community cards obviously
+        uint8[5] actualCards; // Those same cards (the actual cards) in canonical order
+    }
+
     enum HandType {
         HighCard,       // Lowest value hand
         OnePair,        // Two cards of the same value
@@ -49,9 +106,9 @@ library PokerHandValidation {
 	}
 
     function handCardsExist(
-        uint[7] memory availableCards,
-        uint[5] memory cardIndexes,
-        uint[5] memory myCards
+        uint8[7] memory availableCards,
+        uint8[5] memory cardIndexes,
+        uint8[5] memory myCards
     ) public pure returns (bool) {
         for (uint i = 0; i < cardIndexes.length; i++) {
             if (availableCards[cardIndexes[i]] != myCards[i]) {
@@ -61,7 +118,7 @@ library PokerHandValidation {
         return true; // If all cards match, return true
     }
 	
-    function HandRecognize(HandType handType, uint[5] memory cards) public pure returns (bool) {
+    function HandRecognize(HandType handType, uint8[5] memory cards) public pure returns (bool) {
         // TODO: Implement the logic to verify if the hand matches the handType
         // Assume It's truthful for now
         
@@ -181,5 +238,167 @@ library PokerHandValidation {
         }
         return true;
     }
+
+        // Method to check if all non-folded players have the same amount of chips
+    function pot_is_right(uint[] memory chipsArray, bool[] memory has_folded) public pure returns (bool) {
+        uint validChipsValue = 0;
+        bool isValidChipsValueSet = false;
+
+        for (uint i = 0; i < chipsArray.length; i++) {
+            // Skip the folded players
+            if (has_folded[i]) continue;
+
+            // Set validChipsValue for the first non-folded player
+            if (!isValidChipsValueSet) {
+                validChipsValue = chipsArray[i];
+                isValidChipsValueSet = true;
+                continue;
+            }
+
+            // If any non-folded player has a different chips value, return false
+            if (chipsArray[i] != validChipsValue) {
+                return false;
+            }
+        }
+
+        // If all non-folded players have the same chips value, return true
+        return true;
+    }
+
+  // Gets the next turn
+  // loops around
+  // skips skippable 
+    function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
+        uint numPlayers = shouldSkip.length;
+        require(currentTurn < numPlayers, "Invalid currentTurn index");
+
+        uint nextIndex = (currentTurn + 1) % numPlayers; // Start from the next index, loop back if at the end
+        while(shouldSkip[nextIndex]) {
+            if (nextIndex == currentTurn) {
+                // If we've looped all the way around, return the currentTurn
+                // This means all other indices are skipped
+                return currentTurn;
+            }
+            nextIndex = (nextIndex + 1) % numPlayers; // Move to the next index, loop back if at the end
+        }
+        
+        return nextIndex;   
+    }
+
+    // Function to find the first and last active player indices
+    // if first == last there is also only one player
+    function first_last_active_player(bool[] memory has_folded) public pure returns (uint first_active_player_index, uint last_active_player_index) {
+        first_active_player_index = type(uint).max; // Initialize with max value as a flag for no active player found yet
+        last_active_player_index = 0;
+        bool foundActivePlayer = false; // Flag to check if at least one active player exists
+
+        for (uint i = 0; i < has_folded.length; i++) {
+            if (!has_folded[i]) { // If the player has not folded
+                // If no active player has been found yet, set the first active player index
+                if (!foundActivePlayer) {
+                    first_active_player_index = i;
+                    foundActivePlayer = true; // Set the flag as active player found
+                }
+                last_active_player_index = i; // Update the last active player index for every non-folded player found
+            }
+        }
+
+        // If no active player was found, reset indices to indicate no active players
+        if (!foundActivePlayer) {
+            first_active_player_index = 0;
+            last_active_player_index = 0;
+            // Alternatively, could return a specific flag value or throw an error based on your application's requirements
+        }
+
+        return (first_active_player_index, last_active_player_index);
+    }
+
+    function removeAddresses(address[] memory addresses, bool[] memory shouldBeRemoved) public pure returns (address[] memory) {
+        require(addresses.length == shouldBeRemoved.length, "Arrays must be of the same length");
+
+        uint256 count = 0;
+
+        // First, count how many addresses we will have in the new array
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (!shouldBeRemoved[i]) {
+                count++;
+            }
+        }
+
+        // Initialize a new array of the determined size
+        address[] memory filteredAddresses = new address[](count);
+        uint256 j = 0;
+
+        // Fill the new array with addresses that should not be removed
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (!shouldBeRemoved[i]) {
+                filteredAddresses[j] = addresses[i];
+                j++;
+            }
+        }
+
+        return filteredAddresses;
+    }
+
+    function createBoolArray(uint n) public pure returns (bool[] memory) {
+        bool[] memory arr = new bool[](n);
+        for (uint i = 0; i < n; i++) {
+            arr[i] = false;
+        }
+        return arr;
+    }
+
+    function createZeroArray(uint n) public pure returns (uint[] memory) {
+        uint[] memory arr = new uint[](n);
+        for (uint i = 0; i < n; i++) {
+            arr[i] = 0;
+        }
+        return arr;
+    }
+        // Encrypted by Hashing
+    event EncryptedCardsEvent 
+    (
+        // So the player can identify if this is relevant
+        address player,
+        uint tableId,
+        uint handNum, 
+
+        // The Actual Encrypted Cards
+        bytes hole1_encrypted,
+        bytes hole2_encrypted
+    );
+
+    event CommunityCardRevealedEvent 
+    (
+        uint tableId,
+        uint handNum, 
+        uint communityindex, // 0,1,2 = Flop 3 = Fold 4 = River
+        uint communitycard
+    );
+
+    // internal secret storage, but unencrypted
+    struct PlayerCards {
+        uint hole1;
+        uint hole2;
+    }
+
+    struct EncryptedCards 
+    {
+        bytes encryptedHole1;
+        bytes encryptedHole2;
+    }
+
+    // internal secret storage, but unencrypted
+    struct CommunityCards 
+    {
+        uint[5] allcards; 
+    }
+
+    struct RevealedCommunityCard 
+    {
+        uint card;
+        bool valid;
+    }
+
 
 }

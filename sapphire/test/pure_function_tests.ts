@@ -9,7 +9,7 @@ import {
   import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
   import { expect } from "chai";
   import { ethers } from "hardhat";
-  import { Poker, PokerToken } from "../typechain-types/contracts";
+  import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
   import { ContractFactory, Contract, Signer } from "ethers";
   const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
   
@@ -77,7 +77,15 @@ import {
       two_player_game_players = [player1, player2];
       four_player_game_players = [player1, player2, player3, player4]
   
-      let factory1 = await ethers.getContractFactory('Poker');
+      let factoryLib = await ethers.getContractFactory('PokerHandValidation');
+      let lib = await factoryLib.deploy() as PokerHandValidation;
+      let lib_deployed = await lib.waitForDeployment();
+  
+      let factory1 = await ethers.getContractFactory('Poker', {
+        libraries: {
+          PokerHandValidation: (await lib_deployed.getAddress()),
+        },
+      });
       poker = await factory1.deploy() as Poker;
       await poker.waitForDeployment();
   

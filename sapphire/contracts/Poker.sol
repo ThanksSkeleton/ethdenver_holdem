@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 //import "./ActualPokerHandProvider.sol";
 import "./StaticPokerHandProvider.sol";
 import "./PokerHandValidation.sol";
@@ -54,73 +54,18 @@ import "./PokerHandValidation.sol";
 
 contract Poker is Ownable, StaticPokerHandProvider {
 
-    enum BettingRound 
-    {
-        AfterPreflop,
-        AfterFlop,
-        AfterTurn,
-        AfterRiver
-    }
-
-    enum TableState {
-        Active, 
-        Inactive, // Awaiting Admin to Deal the Hole Cards
-        Showdown 
-    }
-
-    enum PlayerAction {
-        Call,
-        Raise,
-        Check,
-        Fold
-    }
-
-    event NewTableCreated(uint tableId, Table table);
-    event NewBuyIn(uint tableId, address player, uint amount);
-    event BettingRoundOver(uint tableId, uint round);
-    event TableShowdown(uint tableId);
-
-    struct Table {
-        TableState state;
-        uint totalHands; // total Hands till now
-        BettingRound currentBettingRound; // index of the current round
-        uint buyInAmount;
-        uint maxPlayers;
-        address[] players;
-        uint pot;
-        uint bigBlind;
-        IERC20 token; // the token to be used to play in the table
-    }
-
-    struct BettingRoundInfo {
-        uint turn; // an index on the players array, the player who has the current turn
-        uint highestChip; // the current highest chip to be called in the round. 
-
-        bool[] has_folded; // player flag for having folded
-        uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
-    }
-
-    struct ShowdownHand 
-    {
-        PokerHandValidation.HandType handType;
-        // Remember that the user has to present these in canonical order
-        uint[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
-            //  You must choose your own cards + community cards obviously
-        uint[5] actualCards; // Those same cards (the actual cards) in canonical order
-    }
-
     uint public totalTables;
     // id => Table
-    mapping(uint => Table) public tables;
+    mapping(uint => PokerHandValidation.Table) public tables;
     // keeps track of the remaining chips of the player in a table
     // player => tableId => remainingChips
     mapping(address => mapping(uint => uint)) public chips;
     // tableId => bettingRoundNum => BettingRound
-    mapping(uint => mapping(BettingRound => BettingRoundInfo)) public bettingRounds;
+    mapping(uint => mapping(PokerHandValidation.BettingRound => PokerHandValidation.BettingRoundInfo)) public bettingRounds;
     // player => tableId to requestLeave bool
     mapping(address  => mapping(uint => bool)) public requestLeave;
     // player => tableId => handId => ShowdownHand
-    mapping(address => mapping(uint => mapping(uint => ShowdownHand))) public showdownHands;
+    mapping(address => mapping(uint => mapping(uint => PokerHandValidation.ShowdownHand))) public showdownHands;
 
     constructor() Ownable(msg.sender) 
     {
@@ -143,10 +88,10 @@ contract Poker is Ownable, StaticPokerHandProvider {
        
        address[] memory empty;
        
-        tables[totalTables] =  Table({
-            state: TableState.Inactive,
+        tables[totalTables] =  PokerHandValidation.Table({
+            state: PokerHandValidation.TableState.Inactive,
             totalHands: 0,
-            currentBettingRound: BettingRound.AfterPreflop,
+            currentBettingRound: PokerHandValidation.BettingRound.AfterPreflop,
             buyInAmount: _buyInAmount,
             maxPlayers: _maxPlayers,
             players: empty,
@@ -155,7 +100,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             token: IERC20(_token)
         });
 
-        emit NewTableCreated(totalTables, tables[totalTables]);
+        emit PokerHandValidation.NewTableCreated(totalTables, tables[totalTables]);
 
         totalTables += 1;
     }
@@ -167,12 +112,12 @@ contract Poker is Ownable, StaticPokerHandProvider {
         return tables[_tableId].players;
     }
 
-    function bettingRoundChips(uint _tableId, BettingRound bettingRoundNumber) public view returns (uint[] memory) 
+    function bettingRoundChips(uint _tableId, PokerHandValidation.BettingRound bettingRoundNumber) public view returns (uint[] memory) 
     {
         return bettingRounds[_tableId][bettingRoundNumber].chips;
     }
 
-    function bettingRoundHasFolded(uint _tableId, BettingRound bettingRoundNumber) public view returns (bool[] memory) 
+    function bettingRoundHasFolded(uint _tableId, PokerHandValidation.BettingRound bettingRoundNumber) public view returns (bool[] memory) 
     {
         return bettingRounds[_tableId][bettingRoundNumber].has_folded;
     }
@@ -181,7 +126,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @param _tableId the unique id of the table
     /// @param _amount The amount of tokens to buy in the table. (must be greater than or equal to the minimum table buy in amount)
     function buyIn(uint _tableId, uint _amount, uint salt) public {
-        Table storage table = tables[_tableId];
+        PokerHandValidation.Table storage table = tables[_tableId];
 
         require(_amount >= table.buyInAmount, "Not enough buyInAmount");
         require(table.players.length < table.maxPlayers, "Table full");
@@ -197,7 +142,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         register_player(_tableId, salt);
 
-        emit NewBuyIn(_tableId, msg.sender, _amount);
+        emit PokerHandValidation.NewBuyIn(_tableId, msg.sender, _amount);
 
         if (table.players.length == table.maxPlayers)
         {
@@ -206,16 +151,16 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }
 
     function dealCards(uint _tableId) internal {
-        Table storage table = tables[_tableId];
+        PokerHandValidation.Table storage table = tables[_tableId];
         uint numPlayers = table.players.length;
-        require(table.state == TableState.Inactive, "Game already going on");
-        table.state = TableState.Active;
+        require(table.state == PokerHandValidation.TableState.Inactive, "Game already going on");
+        table.state = PokerHandValidation.TableState.Active;
 
         // initiate the first betting round
-        BettingRoundInfo storage bettingRound = bettingRounds[_tableId][BettingRound.AfterPreflop];
+        PokerHandValidation.BettingRoundInfo storage bettingRound = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterPreflop];
 
         bettingRound.highestChip = table.bigBlind;
-        bettingRound.has_folded = createBoolArray(numPlayers);
+        bettingRound.has_folded = PokerHandValidation.createBoolArray(numPlayers);
     
         // initiate the small blind and the big blind
         for (uint i=0; i < numPlayers; i++) {
@@ -245,11 +190,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
     // handled automatically at the start of the next round otherwise
     function requestToLeave(uint _tableId) public
     {
-        Table storage table = tables[_tableId];
+        PokerHandValidation.Table storage table = tables[_tableId];
         //You can pointlessly request to leave a table you're not at, doesn't matter        
         requestLeave[msg.sender][_tableId] = true;
 
-        if (table.state == TableState.Active || table.state == TableState.Showdown) 
+        if (table.state == PokerHandValidation.TableState.Active || table.state == PokerHandValidation.TableState.Showdown) 
         {
             // You can't leave during the game
             // Leaves are automatically handled at the start of the next hand
@@ -260,14 +205,14 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }
 
     /// @param _raiseAmount only required in case of raise. Else put zero. This is the amount you are putting in addition to what you have already put in this round
-    function playHand(uint _tableId, PlayerAction _action, uint _raiseAmount) external {
-        Table storage table = tables[_tableId];
-        require(table.state == TableState.Active, "No Active Round");
+    function playHand(uint _tableId, PokerHandValidation.PlayerAction _action, uint _raiseAmount) external {
+        PokerHandValidation.Table storage table = tables[_tableId];
+        require(table.state == PokerHandValidation.TableState.Active, "No Active Round");
         
-        BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
+        PokerHandValidation.BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
         require(table.players[bettingRound.turn] == msg.sender, "Not your turn");
 
-        if (_action == PlayerAction.Call) {
+        if (_action == PokerHandValidation.PlayerAction.Call) {
             // in case of calling
             // deduct chips from the users account
             // add those chips to the pot
@@ -282,7 +227,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             bettingRound.chips[bettingRound.turn] += callAmount;
             table.pot += callAmount;
             
-        } else if (_action == PlayerAction.Check) {
+        } else if (_action == PokerHandValidation.PlayerAction.Check) {
             // you can only check if all the other values in the round.chips array is zero
             // i.e nobody has put any money till now
             for (uint i =0; i < table.players.length; i++) {
@@ -290,7 +235,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
                     require(false, "Check not possible");
                 }
             }
-        } else if (_action == PlayerAction.Raise) {
+        } else if (_action == PokerHandValidation.PlayerAction.Raise) {
             // in case of raising
             // deduct chips from the player's account
             // add those chips to the pot
@@ -308,7 +253,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
             bettingRound.highestChip = proposedAmount;
 
-        } else if (_action == PlayerAction.Fold) {
+        } else if (_action == PokerHandValidation.PlayerAction.Fold) {
             bettingRound.has_folded[bettingRound.turn] = true;
 
             // TODO new fold logic
@@ -317,33 +262,75 @@ contract Poker is Ownable, StaticPokerHandProvider {
         _finishRound(_tableId, table);       
     }
 
-    function addShowDownHand(uint _tableId, uint _handId, ShowdownHand memory showdownHand) external 
-	{
-		// determine correct table mode
-		// determine player index
-		// confirm that player has not folded
-		// get available_cards for that player uint[7] = [hole1, hole2, comm1, comm2, comm3, comm4, comm5]
-		// confirm that the cards for each index match
-		// confirm that HandRecognize(cards) 
-		// dont confirm - is player - don't care if you are even a player
-		// dont confirm - already exists - you can overwrite your showdownhand if you want
-		
-		// actually add the showdown hand
-		
-		//if allHandsAdded
-		// StartShowdown(allhands[])
-	}
+    function addShowDownHand(uint _tableId, uint _handId, PokerHandValidation.ShowdownHand memory showdownHand) external {
+        // Assume access to a 'tables' mapping storing 'Table' structs by table ID
+        PokerHandValidation.Table storage table = tables[_tableId];
+        
+        // Verify table is in Showdown state
+        require(table.state == PokerHandValidation.TableState.Showdown, "Table is not in Showdown state");
+        
+        // Determine player index and confirm not folded
+        uint playerIndex;
+        bool isPlayerFound = false;
+        for(uint i = 0; i < table.players.length; i++) {
+            if (table.players[i] == msg.sender) {
+                playerIndex = i;
+                isPlayerFound = true;
+                break;
+            }
+        }
+        require(isPlayerFound, "Player not found in this table");
+        
+        PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
+        require(!bettingRoundInfo.has_folded[playerIndex], "Player has folded and has no showdown");
+        
+        // Get available cards
+        uint8[7] memory availableCards = getAvailableCards(_tableId, _handId, msg.sender);
+        
+        // Validate cards
+        require(PokerHandValidation.handCardsExist(availableCards, showdownHand.cardIndexes, showdownHand.actualCards), "Invalid card submission");
+        
+        // Validate hand
+        require(PokerHandValidation.HandRecognize(showdownHand.handType, showdownHand.actualCards), "Hand does not match the submitted type");
+        
+        // Store showdown hand
+        showdownHands[msg.sender][_tableId][_handId] = showdownHand;
+        
+        // Check if all hands submitted and trigger Showdown if so
+        if (areAllHandsSubmitted(_tableId, _handId)) {
+            StartShowdown(_tableId, _handId);
+        }
+    }
+
+    function getAvailableCards(uint _tableId, uint _handId, address playerAddress) private view returns (uint8[7] memory) {
+        // Implementation to retrieve hole cards and community cards
+        // Placeholder logic
+        return [1,2,3,4,5,6,7]; // Example return statement
+    }
+
+    function areAllHandsSubmitted(uint _tableId, uint _handId) private view returns (bool) {
+        // Implementation to check if all non-folded players have submitted their hands
+        // Placeholder logic
+        return true; // Example return statement
+    }
+
+    function StartShowdown(uint _tableId, uint _handId) private 
+    {
+        // Trigger showdown process
+        // Placeholder logic
+    }
+
 
     /// @dev this method will be called by the offchain node with the
     /// keys of each card hash & the card,  dealt in the dealCards function
     /// this method will then verify them with the hashes stored 
     /// evaluate the cards, and send the pot earnings to the winner
     /// @notice only send the keys & cards of the players who are still living
-    function showdown(uint _tableId, uint[] memory _keys, PlayerCards[] memory _cards) external onlyOwner {
-        Table storage table = tables[_tableId];
+    function showdown(uint _tableId, uint[] memory _keys, PokerHandValidation.PlayerCards[] memory _cards) external onlyOwner {
+        PokerHandValidation.Table storage table = tables[_tableId];
         // BettingRoundInfo memory bettingRound = bettingRounds[_tableId][BettingRound.AfterRiver];
 
-        require(table.state == TableState.Showdown);
+        require(table.state == PokerHandValidation.TableState.Showdown);
 
         // uint n = bettingRound.players.length;
         // require(_keys.length == n && _cards.length == n, "Incorrect arr length");
@@ -388,11 +375,11 @@ contract Poker is Ownable, StaticPokerHandProvider {
     // 2.1 Advances the round if this is not the final round
     // 2.2 Showdown if this is the final round
     // 3. Increments the turn if none of the above are true
-    function _finishRound(uint _tableId, Table storage _table) internal {
-        BettingRoundInfo storage _bettingRound = bettingRounds[_tableId][_table.currentBettingRound];
+    function _finishRound(uint _tableId, PokerHandValidation.Table storage _table) internal {
+        PokerHandValidation.BettingRoundInfo storage _bettingRound = bettingRounds[_tableId][_table.currentBettingRound];
         // if all of the other players have folded then the remaining player automatically wins
-        bool pot_right = pot_is_right(_bettingRound.chips, _bettingRound.has_folded); // checks if anybody has raised or not
-        (uint firstActiveIndex, uint lastActiveIndex) = first_last_active_player(_bettingRound.has_folded);
+        bool pot_right = PokerHandValidation.pot_is_right(_bettingRound.chips, _bettingRound.has_folded); // checks if anybody has raised or not
+        (uint firstActiveIndex, uint lastActiveIndex) = PokerHandValidation.first_last_active_player(_bettingRound.has_folded);
         if (firstActiveIndex == lastActiveIndex) {
             // this is the last player left all others have folded
             // so this player is the winner
@@ -406,47 +393,47 @@ contract Poker is Ownable, StaticPokerHandProvider {
         || 
         (pot_right && _bettingRound.highestChip != 0)) // Pot is right and nonzero
         { 
-            if (_table.currentBettingRound == BettingRound.AfterRiver) 
+            if (_table.currentBettingRound == PokerHandValidation.BettingRound.AfterRiver) 
             {
                 // TODO WIRE IN SHOWODOWN
                 
-                _table.state = TableState.Showdown;
+                _table.state = PokerHandValidation.TableState.Showdown;
 
-                emit TableShowdown(_tableId);
+                emit PokerHandValidation.TableShowdown(_tableId);
             } else {
                 reveal_community_card_based_on_round_that_ended(_tableId,_table.totalHands, _table.currentBettingRound);
 
-                _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
+                _table.currentBettingRound = PokerHandValidation.BettingRound(uint(_table.currentBettingRound) + 1);
 
                 // initiate the next round
-                bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
+                bettingRounds[_tableId][_table.currentBettingRound] = PokerHandValidation.BettingRoundInfo({
                     turn : 0,
                     highestChip: 0,
 
-                    chips: createZeroArray(_bettingRound.chips.length),
+                    chips: PokerHandValidation.createZeroArray(_bettingRound.chips.length),
                     has_folded: _bettingRound.has_folded
 
                 });
             }
         } else {
             // Pot is not right OR Everyone is checking 
-            _bettingRound.turn = nextTurn(_bettingRound.turn, _bettingRound.has_folded);
+            _bettingRound.turn = PokerHandValidation.nextTurn(_bettingRound.turn, _bettingRound.has_folded);
         }
     }
 
-    function reveal_community_card_based_on_round_that_ended(uint table_id, uint handNum, BettingRound round) internal 
+    function reveal_community_card_based_on_round_that_ended(uint table_id, uint handNum, PokerHandValidation.BettingRound round) internal 
     {
-        if (round == BettingRound.AfterPreflop)
+        if (round == PokerHandValidation.BettingRound.AfterPreflop)
         {
             reveal_community_card(table_id, handNum, 0);
             reveal_community_card(table_id, handNum, 1);
             reveal_community_card(table_id, handNum, 2);
         } 
-        else if (round == BettingRound.AfterFlop) 
+        else if (round == PokerHandValidation.BettingRound.AfterFlop) 
         {
             reveal_community_card(table_id, handNum, 3);
         } 
-        else if (round == BettingRound.AfterTurn) 
+        else if (round == PokerHandValidation.BettingRound.AfterTurn) 
         {
             reveal_community_card(table_id, handNum, 4);
         } else {
@@ -455,15 +442,15 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }   
 
     // Reinitiation preps the table for another game with the same players 
-    function _reInitiateTable(Table storage _table, uint _tableId) internal {
+    function _reInitiateTable(PokerHandValidation.Table storage _table, uint _tableId) internal {
 
-        _table.state = TableState.Inactive;
+        _table.state = PokerHandValidation.TableState.Inactive;
         _table.totalHands += 1;
-        _table.currentBettingRound = BettingRound.AfterPreflop;
+        _table.currentBettingRound = PokerHandValidation.BettingRound.AfterPreflop;
         _table.pot = 0;
 
         // initiate the first round
-        BettingRoundInfo storage round = bettingRounds[_tableId][BettingRound.AfterPreflop];
+        PokerHandValidation.BettingRoundInfo storage round = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterPreflop];
         round.highestChip = _table.bigBlind;
 
         _table.players = handle_leaving_players(_tableId);
@@ -479,7 +466,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
     function handle_leaving_players(uint tableId) internal view returns (address[] memory)
     {
-        Table storage table = tables[tableId];
+        PokerHandValidation.Table storage table = tables[tableId];
 
         bool[] memory boolsArray = new bool[](table.players.length);
 
@@ -487,123 +474,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
             boolsArray[i] = requestLeave[table.players[i]][tableId];
         } 
 
-        return removeAddresses(table.players, boolsArray);
-    }
-
-    // Method to check if all non-folded players have the same amount of chips
-    function pot_is_right(uint[] memory chipsArray, bool[] memory has_folded) public pure returns (bool) {
-        uint validChipsValue = 0;
-        bool isValidChipsValueSet = false;
-
-        for (uint i = 0; i < chipsArray.length; i++) {
-            // Skip the folded players
-            if (has_folded[i]) continue;
-
-            // Set validChipsValue for the first non-folded player
-            if (!isValidChipsValueSet) {
-                validChipsValue = chipsArray[i];
-                isValidChipsValueSet = true;
-                continue;
-            }
-
-            // If any non-folded player has a different chips value, return false
-            if (chipsArray[i] != validChipsValue) {
-                return false;
-            }
-        }
-
-        // If all non-folded players have the same chips value, return true
-        return true;
-    }
-
-  // Gets the next turn
-  // loops around
-  // skips skippable 
-    function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
-        uint numPlayers = shouldSkip.length;
-        require(currentTurn < numPlayers, "Invalid currentTurn index");
-
-        uint nextIndex = (currentTurn + 1) % numPlayers; // Start from the next index, loop back if at the end
-        while(shouldSkip[nextIndex]) {
-            if (nextIndex == currentTurn) {
-                // If we've looped all the way around, return the currentTurn
-                // This means all other indices are skipped
-                return currentTurn;
-            }
-            nextIndex = (nextIndex + 1) % numPlayers; // Move to the next index, loop back if at the end
-        }
-        
-        return nextIndex;   
-    }
-
-    // Function to find the first and last active player indices
-    // if first == last there is also only one player
-    function first_last_active_player(bool[] memory has_folded) public pure returns (uint first_active_player_index, uint last_active_player_index) {
-        first_active_player_index = type(uint).max; // Initialize with max value as a flag for no active player found yet
-        last_active_player_index = 0;
-        bool foundActivePlayer = false; // Flag to check if at least one active player exists
-
-        for (uint i = 0; i < has_folded.length; i++) {
-            if (!has_folded[i]) { // If the player has not folded
-                // If no active player has been found yet, set the first active player index
-                if (!foundActivePlayer) {
-                    first_active_player_index = i;
-                    foundActivePlayer = true; // Set the flag as active player found
-                }
-                last_active_player_index = i; // Update the last active player index for every non-folded player found
-            }
-        }
-
-        // If no active player was found, reset indices to indicate no active players
-        if (!foundActivePlayer) {
-            first_active_player_index = 0;
-            last_active_player_index = 0;
-            // Alternatively, could return a specific flag value or throw an error based on your application's requirements
-        }
-
-        return (first_active_player_index, last_active_player_index);
-    }
-
-    function removeAddresses(address[] memory addresses, bool[] memory shouldBeRemoved) public pure returns (address[] memory) {
-        require(addresses.length == shouldBeRemoved.length, "Arrays must be of the same length");
-
-        uint256 count = 0;
-
-        // First, count how many addresses we will have in the new array
-        for (uint256 i = 0; i < addresses.length; i++) {
-            if (!shouldBeRemoved[i]) {
-                count++;
-            }
-        }
-
-        // Initialize a new array of the determined size
-        address[] memory filteredAddresses = new address[](count);
-        uint256 j = 0;
-
-        // Fill the new array with addresses that should not be removed
-        for (uint256 i = 0; i < addresses.length; i++) {
-            if (!shouldBeRemoved[i]) {
-                filteredAddresses[j] = addresses[i];
-                j++;
-            }
-        }
-
-        return filteredAddresses;
-    }
-
-    function createBoolArray(uint n) public pure returns (bool[] memory) {
-        bool[] memory arr = new bool[](n);
-        for (uint i = 0; i < n; i++) {
-            arr[i] = false;
-        }
-        return arr;
-    }
-
-    function createZeroArray(uint n) public pure returns (uint[] memory) {
-        uint[] memory arr = new uint[](n);
-        for (uint i = 0; i < n; i++) {
-            arr[i] = 0;
-        }
-        return arr;
+        return PokerHandValidation.removeAddresses(table.players, boolsArray);
     }
 }

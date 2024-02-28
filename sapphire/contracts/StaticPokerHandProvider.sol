@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./PokerHandProvider.sol";
+import "./PokerHandValidation.sol";
 
 contract StaticPokerHandProvider is PokerHandProvider 
 {
@@ -26,23 +27,23 @@ contract StaticPokerHandProvider is PokerHandProvider
             uint hole_2_card = uint8(cards[hole_2_index]);
 
             // store the cards secretly on chain
-            playerCards[players[player_index]][table_id][handNum] = PlayerCards(hole_1_card, hole_1_card);
+            playerCards[players[player_index]][table_id][handNum] = PokerHandValidation.PlayerCards(hole_1_card, hole_1_card);
 
             uint salt = salts[players[player_index]][table_id];
 
             bytes memory encrypted_card_1  = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card)));
             bytes memory encrypted_card_2 = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)));
 
-            encryptedPlayerCards[players[player_index]][table_id][handNum] = EncryptedCards(encrypted_card_1, encrypted_card_2);
+            encryptedPlayerCards[players[player_index]][table_id][handNum] = PokerHandValidation.EncryptedCards(encrypted_card_1, encrypted_card_2);
 
             // encrypt and emit the cards back to the player
-            emit EncryptedCardsEvent(players[player_index], table_id, handNum, 
+            emit PokerHandValidation.EncryptedCardsEvent(players[player_index], table_id, handNum, 
                 encrypted_card_1,
                 encrypted_card_2
             );
         }
 
-        communityCards[table_id][handNum] = CommunityCards 
+        communityCards[table_id][handNum] = PokerHandValidation.CommunityCards 
         (
            [ 
                 cards[2 * players.length],
