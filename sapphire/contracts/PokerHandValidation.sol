@@ -70,5 +70,26 @@ contract PokerHandValidation {
         return true;
     }
     
-    // TODO FINISH
+    // Solidity Work
+    // User is going to claim they have a poker hand
+    // (HAND_TYPE, uint[5] indexes)
+    // You get from the table
+    // uint[7] cards
+    // Step one - Obvious verification -
+    //  cards are as described
+    //  right number of cards
+    //  any other obvious stuff
+    // Step 2- Hand Check
+    // Make sure the HAND TYPE is correct
+    // Every hand needs a canonical ordering and the player needs to give it in canonical ordering
+    // Step 3 - Pairwise Ranking
+    // Given two hands, which one beats?
+    // Step 4 - Multi Ranking 
+    // of a list of players, which one is the best
+
+    // Unit tests for all of these
+    
+    // Client Side Code Work
+    // Given a list of 7 cards, identify the indexes that make the best hand
+    // (Pre existing library? Linked in discord) 
 }
