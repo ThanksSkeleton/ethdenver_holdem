@@ -94,8 +94,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
     struct BettingRoundInfo {
         bool state; // state of the betting round, if this is active or not
         uint turn; // an index on the players array, the player who has the current turn
-        address[] players; // players still playing in the round who have not folded
         uint highestChip; // the current highest chip to be called in the round. 
+
+        bool[] has_folded; // player flag for having folded
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
@@ -152,18 +153,19 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
     /// @dev returns the list of players on a given table 
     /// @param _tableId the unique id of the table
-    function tablePlayers(uint _tableId) public view returns (address[] memory) {
-        return tables[_tableId].players;
-    }
-
-    function bettingRoundPlayers(uint _tableId, BettingRound bettingRoundNumber) public view returns (address[] memory) 
+    function tablePlayers(uint _tableId) public view returns (address[] memory) 
     {
-        return bettingRounds[_tableId][bettingRoundNumber].players;
+        return tables[_tableId].players;
     }
 
     function bettingRoundChips(uint _tableId, BettingRound bettingRoundNumber) public view returns (uint[] memory) 
     {
         return bettingRounds[_tableId][bettingRoundNumber].chips;
+    }
+
+    function bettingRoundHasFolded(uint _tableId, BettingRound bettingRoundNumber) public view returns (bool[] memory) 
+    {
+        return bettingRounds[_tableId][bettingRoundNumber].has_folded;
     }
 
     /// @dev first the players have to call this method to buy in and enter a table
@@ -202,19 +204,19 @@ contract Poker is Ownable, StaticPokerHandProvider {
         BettingRoundInfo storage bettingRound = bettingRounds[_tableId][BettingRound.AfterPreflop];
 
         bettingRound.state = true;
-        bettingRound.players = table.players;
         bettingRound.highestChip = table.bigBlind;
+        bettingRound.has_folded = createBoolArray(numPlayers);
     
         // initiate the small blind and the big blind
         for (uint i=0; i < numPlayers; i++) {
             if (i == (numPlayers-2)) { // the second to last player, which gets the small blind
                 // small blinds
                 bettingRound.chips.push(table.bigBlind / 2);
-                chips[bettingRound.players[i]][_tableId] -= table.bigBlind / 2;
+                chips[table.players[i]][_tableId] -= table.bigBlind / 2;
             } else if (i == (numPlayers-1)) { // the last player, which gets the big blind
                 // big blinds
                 bettingRound.chips.push(table.bigBlind); // update the round array
-                chips[bettingRound.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
+                chips[table.players[i]][_tableId] -= table.bigBlind; // reduce the players chips
             } 
             else 
             {
@@ -234,7 +236,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         require(table.state == TableState.Active, "No Active Round");
         
         BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
-        require(bettingRound.players[bettingRound.turn] == msg.sender, "Not your turn");
+        require(table.players[bettingRound.turn] == msg.sender, "Not your turn");
 
         if (_action == PlayerAction.Call) {
             // in case of calling
@@ -254,7 +256,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         } else if (_action == PlayerAction.Check) {
             // you can only check if all the other values in the round.chips array is zero
             // i.e nobody has put any money till now
-            for (uint i =0; i < bettingRound.players.length; i++) {
+            for (uint i =0; i < table.players.length; i++) {
                 if (bettingRound.chips[i] > 0) {
                     require(false, "Check not possible");
                 }
@@ -280,8 +282,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
         } else if (_action == PlayerAction.Fold) {
             // in case of folding
             /// remove the player from the players & chips array for this round
-            _remove(bettingRound.turn, bettingRound.players);
-            _remove(bettingRound.turn, bettingRound.chips);
+
+            // TODO new fold logic
+
         }
 
         _finishRound(_tableId, table);       
@@ -298,8 +301,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         require(table.state == TableState.Showdown);
 
-        uint n = bettingRound.players.length;
-        require(_keys.length == n && _cards.length == n, "Incorrect arr length");
+        // uint n = bettingRound.players.length;
+        // require(_keys.length == n && _cards.length == n, "Incorrect arr length");
 
         // // verify the player hashes
         // for (uint i=0; i<n;i++) {
@@ -316,8 +319,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
         address winner;
         uint8 bestRank = 100;
         
-        for (uint j=0; j < n;  j++) {
-            address player = bettingRound.players[j];
+        for (uint j=0; j < 4;  j++) {
+            address player = table.players[j];
             // PlayerCards memory playerCards = _cards[j];
             // uint8[] memory cCards = communityCards[_tableId];
 
@@ -344,20 +347,20 @@ contract Poker is Ownable, StaticPokerHandProvider {
     function _finishRound(uint _tableId, Table storage _table) internal {
         BettingRoundInfo storage _bettingRound = bettingRounds[_tableId][_table.currentBettingRound];
         // if all of the other players have folded then the remaining player automatically wins
-        uint n = _bettingRound.players.length;
-        bool allChipsEqual = _allElementsEqual(_bettingRound.chips); // checks if anybody has raised or not
-        if (n == 1) {
+        bool pot_right = pot_is_right(_bettingRound.chips, _bettingRound.has_folded); // checks if anybody has raised or not
+        (uint firstActiveIndex, uint lastActiveIndex) = first_last_active_player(_bettingRound.has_folded);
+        if (firstActiveIndex == lastActiveIndex) {
             // this is the last player left all others have folded
             // so this player is the winner
             // send the pot money to the user
-            chips[_bettingRound.players[0]][_tableId] += _table.pot;
+            chips[_table.players[lastActiveIndex]][_tableId] += _table.pot;
 
             // re initiate the table
             _reInitiateTable(_table, _tableId);
         } else if (
-        (allChipsEqual && _bettingRound.highestChip == 0 && _bettingRound.turn == n-1) // Scenario: Everyone has checked
+        (pot_right && _bettingRound.highestChip == 0 && _bettingRound.turn == lastActiveIndex) // Scenario: Everyone has checked
         || 
-        (allChipsEqual && _bettingRound.highestChip != 0)) // Pot is right and nonzero
+        (pot_right && _bettingRound.highestChip != 0)) // Pot is right and nonzero
         { 
             if (_table.currentBettingRound == BettingRound.AfterRiver) 
             {
@@ -371,29 +374,20 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
                 _table.currentBettingRound = BettingRound(uint(_table.currentBettingRound) + 1);
 
-                uint[] memory _chips = new uint[](n);
-
                 // initiate the next round
                 bettingRounds[_tableId][_table.currentBettingRound] = BettingRoundInfo({
                     state: true,
                     turn : 0,
-                    players: _bettingRound.players, // all living players from the last round
                     highestChip: 0,
-                    chips: _chips
+
+                    chips: _bettingRound.chips,
+                    has_folded: _bettingRound.has_folded
                 });
             }
         } else {
             // Pot is not right OR Everyone is checking 
-            _bettingRound.turn = _updateTurn(_bettingRound.turn, n);
+            _bettingRound.turn = nextTurn(_bettingRound.turn, _bettingRound.has_folded);
         }
-    }
-
-      // updates the turn to the next player
-    function _updateTurn(uint _currentTurn, uint _totalLength) internal pure returns (uint) {
-        if (_currentTurn == _totalLength -1) {
-            return 0;
-        }
-        return _currentTurn + 1;
     }
 
     function reveal_community_card_based_on_round_that_ended(uint table_id, uint handNum, BettingRound round) internal 
@@ -427,7 +421,6 @@ contract Poker is Ownable, StaticPokerHandProvider {
         // initiate the first round
         BettingRoundInfo storage round = bettingRounds[_tableId][BettingRound.AfterPreflop];
         round.state = true;
-        round.players = _table.players;
         round.highestChip = _table.bigBlind;
     } 
 
@@ -441,13 +434,81 @@ contract Poker is Ownable, StaticPokerHandProvider {
         }
     }
 
-    function _remove(uint index, address[] storage arr) internal {
-        arr[index] = arr[arr.length - 1];
-        arr.pop();
+    // Method to check if all non-folded players have the same amount of chips
+    function pot_is_right(uint[] memory chipsArray, bool[] memory has_folded) public pure returns (bool) {
+        uint validChipsValue = 0;
+        bool isValidChipsValueSet = false;
+
+        for (uint i = 0; i < chipsArray.length; i++) {
+            // Skip the folded players
+            if (has_folded[i]) continue;
+
+            // Set validChipsValue for the first non-folded player
+            if (!isValidChipsValueSet) {
+                validChipsValue = chipsArray[i];
+                isValidChipsValueSet = true;
+                continue;
+            }
+
+            // If any non-folded player has a different chips value, return false
+            if (chipsArray[i] != validChipsValue) {
+                return false;
+            }
+        }
+
+        // If all non-folded players have the same chips value, return true
+        return true;
     }
 
-    function _remove(uint index, uint[] storage arr) internal {
-        arr[index] = arr[arr.length - 1];
-        arr.pop();
+  function nextTurn(uint currentTurn, bool[] memory shouldSkip) public pure returns (uint) {
+        uint numPlayers = shouldSkip.length;
+        require(currentTurn < numPlayers, "Invalid currentTurn index");
+
+        uint nextIndex = (currentTurn + 1) % numPlayers; // Start from the next index, loop back if at the end
+        while(shouldSkip[nextIndex]) {
+            if (nextIndex == currentTurn) {
+                // If we've looped all the way around, return the currentTurn
+                // This means all other indices are skipped
+                return currentTurn;
+            }
+            nextIndex = (nextIndex + 1) % numPlayers; // Move to the next index, loop back if at the end
+        }
+        
+        return nextIndex;
+    }
+
+    // Function to find the first and last active player indices
+    function first_last_active_player(bool[] memory has_folded) public pure returns (uint first_active_player_index, uint last_active_player_index) {
+        first_active_player_index = type(uint).max; // Initialize with max value as a flag for no active player found yet
+        last_active_player_index = 0;
+        bool foundActivePlayer = false; // Flag to check if at least one active player exists
+
+        for (uint i = 0; i < has_folded.length; i++) {
+            if (!has_folded[i]) { // If the player has not folded
+                // If no active player has been found yet, set the first active player index
+                if (!foundActivePlayer) {
+                    first_active_player_index = i;
+                    foundActivePlayer = true; // Set the flag as active player found
+                }
+                last_active_player_index = i; // Update the last active player index for every non-folded player found
+            }
+        }
+
+        // If no active player was found, reset indices to indicate no active players
+        if (!foundActivePlayer) {
+            first_active_player_index = 0;
+            last_active_player_index = 0;
+            // Alternatively, could return a specific flag value or throw an error based on your application's requirements
+        }
+
+        return (first_active_player_index, last_active_player_index);
+    }
+
+    function createBoolArray(uint n) public pure returns (bool[] memory) {
+        bool[] memory arr = new bool[](n);
+        for (uint i = 0; i < n; i++) {
+            arr[i] = false;
+        }
+        return arr;
     }
 }
