@@ -43,18 +43,21 @@ async function initConversations(players) {
 }
 
 const PLAYER_ACTIONS_MAP = {
-  0: "CALL",
-  1: "RAISE",
-  2: "CHECK",
-  3: "FOLD"
+  0: "called",
+  1: "raised",
+  2: "checked",
+  3: "folded"
 };
 
 async function broadcastHand(conversations, action, raiseAmount) {
-  console.log('client trash');
-  console.log(xmtpClient.contacts);
   // await xmtpClient.contacts.refreshConsentList();
   conversations.forEach(async convo => {
-    console.log(`${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} ${raiseAmount}`);
-    await convo.send(`${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} ${raiseAmount}`);
-  })
+    let message = `${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} `
+    // not check nor fold
+    if (action !== 2 && action !== 3) {
+      message += raiseAmount
+    }
+    console.log(message);
+    await convo.send(message);
+  });
 }
