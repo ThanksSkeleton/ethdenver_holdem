@@ -10,8 +10,8 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 // import { BigNumber } from "ethers"; // Assuming you're using ethers.js or a similar library
-
-import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
+import { Poker, PokerHandValidation as PHV, } from "../typechain-types/contracts/Poker";
+import { PokerToken } from "../typechain-types/contracts/PokerToken"
 import { ContractFactory, Contract, Signer } from "ethers";
 const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
 
@@ -125,7 +125,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     four_player_game_players = [player1, player2, player3, player4]
 
     let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-    let lib = await factoryLib.deploy() as PokerHandValidation;
+    let lib = await factoryLib.deploy() as Contract;
     let lib_deployed = await lib.waitForDeployment();
 
     let factory1 = await ethers.getContractFactory('Poker', {
@@ -190,6 +190,57 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     }
   }
 
+  async function buildFullPlayerAction(player: Signer, action: number, raiseAmount: number) : Promise<PHV.FullPlayerActionStruct>
+  {
+    // struct FullPlayerAction
+    // {   
+    //     address player;
+    //     uint action;
+    //     uint raiseAmount;
+    //     // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
+    //     uint signature;
+    // }
+
+    let address = await player.getAddress();
+
+    let fullPlayerAction : PHV.FullPlayerActionStruct = {
+      player: address, 
+      action: action, 
+      raiseAmount: BigInt(raiseAmount),
+      signature: 0,
+    };
+
+    return fullPlayerAction;
+  }
+
+  async function four_player_advance_to_flop_batch(do_setup : Boolean) 
+  {
+    if (do_setup) {
+      await four_player_table_setup()
+    }
+
+    console.log("PREFLOP - EVERYONE RAISES");
+
+    let batch_raises : PHV.FullPlayerActionStruct[] =
+    [
+      await buildFullPlayerAction(player1, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player2, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player3, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player4, PLAYER_ACTION_RAISE, 20)
+    ];
+
+    await poker.connect(stranger).playHand_batch(TABLE_ID, batch_raises);
+
+    let batch_calls : PHV.FullPlayerActionStruct[] =
+    [
+      await buildFullPlayerAction(player1, PLAYER_ACTION_CALL, 0),
+      await buildFullPlayerAction(player2, PLAYER_ACTION_CALL, 0),
+      await buildFullPlayerAction(player3, PLAYER_ACTION_CALL, 0),
+    ];
+
+    await poker.connect(stranger).playHand_batch(TABLE_ID, batch_calls);
+  }
+
   async function four_player_advance_to_showdown(do_setup: Boolean) 
   {
     await four_player_advance_to_flop(do_setup);
@@ -237,7 +288,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       let address = await shs[0].getAddress();
       let hand_type = BigInt(shs[1]);
 
-      let showdownHand : PokerHandValidation.ShowdownHandStruct = {
+      let showdownHand : PHV.ShowdownHandStruct = {
         playerAddress: address, // Example Ethereum address
         h: BigInt(hand_type), // BigNumberish can be a string for large numbers
         cardIndexes: [
@@ -295,12 +346,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   it('Two Player Game Gives them decryptable encrypted Cards, + Raise', async () => {
     await two_player_table_setup(); 
-
-    // confirm that there are cards
-    for (let [player, salt] of zip(two_player_game_players, two_player_game_salts)) 
-    {
-
-    }
 
     let br_chips = await poker.bettingRoundChips(TABLE_ID, 0);
     console.log("All Betting Round chips " + br_chips);
@@ -488,5 +533,10 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
      await four_player_play_entire_game(false, SECOND_HAND);
   });
 
+  it('Four Player Game - Batch Actions', async () => 
+  {
+     await four_player_advance_to_flop_batch(true);
+
+  });
 
 });

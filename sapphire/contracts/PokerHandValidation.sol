@@ -97,10 +97,10 @@ library PokerHandValidation {
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
     }
 
-    struct FullPlayerAction 
+    struct FullPlayerAction
     {   
         address player;
-        PokerHandValidation.PlayerAction action;
+        uint action;
         uint raiseAmount;
         // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
         uint signature;

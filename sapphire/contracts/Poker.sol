@@ -219,7 +219,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         for (uint i=0; i < fullactions.length; i++) 
         { 
-            playHand_inner(_tableId, fullactions[i].action, fullactions[i].raiseAmount, fullactions[i].player);
+            playHand_inner(_tableId, PokerHandValidation.PlayerAction(fullactions[i].action), fullactions[i].raiseAmount, fullactions[i].player);
         }
     }
 
