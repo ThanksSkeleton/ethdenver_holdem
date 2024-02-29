@@ -158,11 +158,12 @@ contract Poker is Ownable, StaticPokerHandProvider {
 
         // initiate the first betting round
         PokerHandValidation.BettingRoundInfo storage bettingRound = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterPreflop];
-
+        bettingRound.turn = 0;
         bettingRound.highestChip = table.bigBlind;
         bettingRound.has_folded = PokerHandValidation.createBoolArray(numPlayers);
+        delete bettingRound.chips; // clear out because we will build this below
     
-        // initiate the small blind and the big blind
+        // initiate chips with the small blind and the big blind
         for (uint i=0; i < numPlayers; i++) {
             if (i == (numPlayers-2)) { // the second to last player, which gets the small blind
                 // small blinds
@@ -463,10 +464,6 @@ function areAllHandsSubmitted(uint _tableId, uint _handId)
         _table.totalHands += 1;
         _table.currentBettingRound = PokerHandValidation.BettingRound.AfterPreflop;
         _table.pot = 0;
-
-        // initiate the first round
-        PokerHandValidation.BettingRoundInfo storage round = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterPreflop];
-        round.highestChip = _table.bigBlind;
 
         _table.players = handle_leaving_players(_tableId);
         
