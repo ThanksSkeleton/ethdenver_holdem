@@ -265,21 +265,14 @@ var NewGameComponent = Vue.component("NewGame", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-      
-      this.token = await TokenContract(this.provider);
+      await Init(this);
+
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
       });
-      this.secure_contract = await SecretPokerContract(this.provider);
-
       await this.update();
     } catch (e) {
       console.log('create ERR', e);
@@ -307,10 +300,6 @@ var NewGameComponent = Vue.component("NewGame", {
       } catch (e) {
         console.log('create ERR', e);
       }
-    },
-    create_game: async function () {
-      console.log("create_game");
-      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
     join_game: async function (num) {
       console.log("join_game", num);
