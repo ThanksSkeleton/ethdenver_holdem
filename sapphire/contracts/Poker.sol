@@ -414,7 +414,9 @@ function areAllHandsSubmitted(uint _tableId, uint _handId)
 
                 // initiate the next round
                 bettingRounds[_tableId][_table.currentBettingRound] = PokerHandValidation.BettingRoundInfo({
-                    turn : 0,
+                    // start at the first unfolded player
+                    // i.e. the first unfolded player after the last player
+                    turn : PokerHandValidation.nextTurn(_table.players.length-1, _bettingRound.has_folded),
                     highestChip: 0,
 
                     chips: PokerHandValidation.createZeroArray(_bettingRound.chips.length),

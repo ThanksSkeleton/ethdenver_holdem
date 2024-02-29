@@ -12,39 +12,65 @@
   }
 </style>
 
-<template id="table" class="tableRoom">
-  
-  <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
-  
-  <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()">
-      <h3 class="truncate text-sm font-medium text-gray-900">
-        <% i + 1 %>. <% player %>
-      </h3>
-      <span
-        class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin
-      </span>
-      <p class="mt-1 truncate text-sm text-gray-500">
-        Chips Bet: <% bettingRoundChips[i] %>
-      </p>
-      <img class="h-10 w-10 flex-shrink-0" :src="'https://effigy.im/a/' + player + '.png'">
-      <div v-for="card in cards">
-        <img :src="'./assets/img/cards/eth_back.png'"
-          class="h-full w-full object-contain object-center lg:h-full lg:w-full"
-        >
+<template id="table">
+  <div class="tableRoom">
+    <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
+    <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()"
+        class="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
+        <div class="flex w-full items-center justify-between space-x-6 p-6">
+          <div class="flex-1 truncate">
+            <div class="flex items-center space-x-3">
+              <h3 class="truncate text-sm font-medium text-gray-900">
+                <% i + 1 %>. <% player %>
+              </h3>
+              <span
+                class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin</span>
+            </div>
+            <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[i] %>
+            </p>
+          </div>
+          <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300" :src="'https://effigy.im/a/' + player + '.png'">
+        </div>
+        <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+          <div v-for="card in cards" class="group relative">
+            <div
+              class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-10">
+              <img :src="'./assets/img/cards/eth_back.png'"
+                class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+
+    <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
+      <h2 class="text-2xl font-bold tracking-tight text-gray-900">Community Cards</h2>
+      <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+        <div v-for="card in communityCards" class="group relative">
+          <div
+            class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-20">
+            <img :src="'./assets/img/cards/' + card + '.png'"
+              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+          </div>
+        </div>
       </div>
-    </li>
-  </ul>
+    </div>
 
-
-  <div class="mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Community Cards</h2>
-    <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-      <div v-for="card in communityCards" class="group relative">
-        <div
-          class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-20">
-          <img :src="'./assets/img/cards/' + card"
-            class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+    <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
+      <h2 class="text-2xl font-bold tracking-tight text-gray-900">
+        <% this.player_index + 1 %>. You (<% this.account %>)
+      </h2>
+      <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %>
+      </p>
+      <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+        <div v-for="card in cards" class="group relative">
+          <div
+            class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
+            <img :src="'./assets/img/cards/' + card + '.png'"
+              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+          </div>
         </div>
       </div>
     </div>
@@ -136,7 +162,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
-      cards: ["eth_back.png", "eth_back.png"],
+      cards: ["eth_back", "eth_back"],
       ActionCall: 0,
       ActionRaise: 1,
       ActionCheck: 2,
@@ -203,7 +229,7 @@ var TableComponent = Vue.component("Table", {
         }
         
         let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-        let salt = localStorage.getItem('salt:' + this.table_index);
+        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
         if (salt == null) {
           this.error = 'salt is null';
           this.updating = false;
@@ -242,19 +268,24 @@ var TableComponent = Vue.component("Table", {
         };
         this.communityCards = communityCards;
 
+        if (this.communityCards.length > 0) {
+          let hand = Hand.solve(this.cards.concat(this.communityCards));
+          console.log('hand', hand);
+        }
+
       } catch (e) {
         console.log('create ERR', e);
       }
       this.updating = false;
     },
     numToCard: function (num) {
-      if (num == -1) return "eth_back.png";
+      if (num == -1) return "eth_back";
 
       let suit = Math.floor(num / 13);
       let value = num % 13;
       let suits = ['H', 'D', 'C', 'S'];
       let values = ['2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K', 'A'];
-      return values[value] + suits[suit] + ".png";
+      return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
       console.log('playHand');

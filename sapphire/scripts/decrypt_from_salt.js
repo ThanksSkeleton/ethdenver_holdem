@@ -2,7 +2,7 @@
 function hash_decrypt_card(salt, table_id, handnum, encrypted) {
   for (let card = 0; card <= 51; card++) {
     // Generate the keccak256 hash of the concatenated salt, table_id, handnum, and card
-    const hash = ethers.keccak256(ethers.solidityPacked(['uint256', 'uint256', 'uint256', 'uint256'], [salt, table_id, handnum, card]));
+    const hash = ethers.keccak256(ethers.solidityPacked(['uint256', 'uint256', 'uint256', 'uint8'], [salt, table_id, handnum, card]));
 
     // Check if the generated hash matches the encrypted data
     if (hash === ethers.hexlify(encrypted)) {
