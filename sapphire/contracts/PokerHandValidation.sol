@@ -39,9 +39,9 @@ library PokerHandValidation {
     }
 
     enum TableState {
-        Active, 
-        Inactive, // Awaiting Admin to Deal the Hole Cards
-        Showdown 
+        Active,  // Waiting for players to take actions
+        Inactive, // Waiting for enough Players to start the game
+        Showdown  // Waiting for players to submit their showdown hands
     }
 
     enum PlayerAction {
