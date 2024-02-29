@@ -35,6 +35,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   let four_player_game_players : Signer[];
 
 
+
   const MINIMUM_BUY_IN_AMOUNT = 200;
   const TWO_PLAYERS = 2;
   const FOUR_PLAYERS = 4;
@@ -46,7 +47,9 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   const player1_salt = 1;
   const player2_salt = 2;
   const player3_salt = 3;
-  const player4_salt = 4;
+  const player4_salt = 4;  
+  
+  let four_player_game_salts = [player1_salt, player2_salt, player3_salt, player4_salt]
 
   const BETTING_ROUND_PREFLOP = 0;
   const BETTING_ROUND_FLOP = 1;
@@ -59,6 +62,17 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   const PLAYER_ACTION_FOLD = 3;
 
   const HAND_ID = 0;
+
+  function zip<T, U>(array1: T[], array2: U[]): [T, U][] {
+    return array1.map((item, index) => [item, array2[index]]);
+  }
+
+// // Example usage
+// const array1 = [1, 2, 3]; // Array of numbers
+// const array2 = ['a', 'b', 'c']; // Array of strings
+
+// const zippedArray = zip(array1, array2);
+// console.log(zippedArray); // Output: [[1, 'a'], [2, 'b'], [3, 'c']]
 
   beforeEach(async function () {
 
@@ -131,6 +145,26 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     }
   }
 
+  async function four_player_advance_to_showdown() 
+  {
+    await four_player_advance_to_flop();
+    // Everyone checks flop
+    for (let player of four_player_game_players) 
+    {
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
+    }
+    // Everyone checks turn
+    for (let player of four_player_game_players) 
+    {
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
+    }
+    // Everyone checks river
+    for (let player of four_player_game_players) 
+    {
+      await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
+    }
+  }
+
   async function summarize_chips_four_players(betting_round: number) 
   {
     console.log("Chip Summary")
@@ -151,6 +185,17 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     }
 
     console.log("End Summary")
+  }
+
+  async function get_hole_cards_from_encrypted(player: Signer, salt: number): Promise<number[]>
+  {
+    let encrypted_cards = await poker.encryptedPlayerCards(await player.getAddress(), TABLE_ID, HAND_ID);
+    console.log("cards - encrypted" + encrypted_cards);
+
+    let decrypted_cards = decrypt_hole_cards(salt, TABLE_ID, HAND_ID, encrypted_cards);
+    console.log("cards - decrypted" + decrypted_cards);
+
+    return [decrypted_cards[0], decrypted_cards[1]];
   }
 
   it('First Player leaves 2p game that has not started', async () => 
@@ -335,4 +380,34 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player3).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
   });
+
+  async function buildMyCards(player: Signer, salt: number): Promise<Number[]> {
+    let hole_cards = await get_hole_cards_from_encrypted(player, salt); // Destructure the result of bar into bar0 and bar1
+    
+    const inputs = [0, 1, 2, 3, 4];
+    const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, HAND_ID, value)); // Create an array of promises
+    const tuples = await Promise.all(promiseArray); // Wait for all promises to resolve to tuples
+    const cards = tuples.map((r) => Number(r.card)); // Extract only the "card" part from each tuple
+
+    // Combine all values into a single array
+    return [hole_cards[0], hole_cards[1], ...cards];
+  }
+  
+  it('Four Player Game - Showdown Tests', async () => 
+  {
+    await four_player_advance_to_showdown(); 
+
+    let pot = (await poker.tables(TABLE_ID)).pot;
+    console.log("Pot is: "+ pot);
+
+    for (let [signer, salt] of zip(four_player_game_players, four_player_game_salts)) 
+    {
+      console.log("Player Cards: " + buildMyCards(signer, salt));
+    }
+  });
+
+
+
+
+
 });
