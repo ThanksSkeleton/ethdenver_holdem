@@ -404,6 +404,16 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     {
       console.log("Player Cards: " + await buildMyCards(signer, salt));
     }
+
+    // For the hardcoded cards, we have 
+    // [0, 1] [2, 3] [4, 5] [6, 7] --- [8 9 10 11 12]
+    // technically - 
+    // everyone has a straight flush with the community cards - but ignore for now
+    // Player1, Player2, Player3, will submit Flushes combining their hole and community
+    // Player4 will submit a Straight Flush combining their hole and community
+    
+
+
   });
 
 
