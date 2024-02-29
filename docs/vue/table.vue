@@ -79,7 +79,7 @@
         <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
         </p>
         <div v-for="card in cards">
-          <img :src="'./assets/img/cards/' + card">
+          <img :src="'./assets/img/cards/' + card + '.png'">
         </div>
         <div class="flex items-center justify-between my-4">
           <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
@@ -164,15 +164,9 @@ var TableComponent = Vue.component("Table", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-
-      this.token = await TokenContract(this.provider);
+      await Init(this);
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
@@ -183,7 +177,6 @@ var TableComponent = Vue.component("Table", {
           this.update();
         }, 10000);
       }
-
 
       await this.update();
 
