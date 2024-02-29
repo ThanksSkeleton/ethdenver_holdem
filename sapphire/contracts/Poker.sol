@@ -125,7 +125,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @dev first the players have to call this method to buy in and enter a table
     /// @param _tableId the unique id of the table
     /// @param _amount The amount of tokens to buy in the table. (must be greater than or equal to the minimum table buy in amount)
-    function buyIn(uint _tableId, uint _amount, uint salt) public {
+    function buyIn(uint _tableId, uint _amount, uint salt) external {
         PokerHandValidation.Table storage table = tables[_tableId];
 
         require(_amount >= table.buyInAmount, "Not enough buyInAmount");
@@ -190,7 +190,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     // request to request
     // handled immediately if the game is not active
     // handled automatically at the start of the next round otherwise
-    function requestToLeave(uint _tableId) public
+    function requestToLeave(uint _tableId) external
     {
         PokerHandValidation.Table storage table = tables[_tableId];
         //You can pointlessly request to leave a table you're not at, doesn't matter        
@@ -345,8 +345,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         ]; // Example return statement
     }
 
-    function areAllHandsSubmitted(uint _tableId, uint _handId) 
-        private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
+    function areAllHandsSubmitted(uint _tableId, uint _handId) private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
         
         PokerHandValidation.Table storage table = tables[_tableId];
         PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
