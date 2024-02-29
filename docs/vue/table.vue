@@ -1,10 +1,30 @@
 <style scoped>
+  .wrapper {
+    height: 100%;
+  }
+
   .tableRoom {
-    background: black;
-    background-image: url('../assets/img/poker_table.jpg');
-    background-size: cover;
+    width: 100%;
+    padding-top: 400px;
+    background-attachment: fixed;
     background-repeat: no-repeat;
+    background-size: cover;
     background-position: center center;
+    background-image: url('../assets/img/poker_table.jpg');
+  }
+
+  .rapper {
+    padding-bottom: 200px;;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .outliner {
+    border: 1px solid red;
+    width: 500px;
+    height: 200px;
+    overflow: hidden;
   }
 
   ul {
@@ -13,129 +33,98 @@
 </style>
 
 <template id="table">
-  <div class="tableRoom">
-    <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
-    <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()"
-        class="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
-        <div class="flex w-full items-center justify-between space-x-6 p-6">
-          <div class="flex-1 truncate">
-            <div class="flex items-center space-x-3">
-              <h3 class="truncate text-sm font-medium text-gray-900">
-                <% i + 1 %>. <% player %>
-              </h3>
-              <span
-                class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Admin</span>
-            </div>
-            <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[i] %>
-            </p>
-          </div>
-          <img class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-300" :src="'https://effigy.im/a/' + player + '.png'">
-        </div>
-        <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-          <div v-for="card in cards" class="group relative">
-            <div
-              class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-10">
-              <img :src="'./assets/img/cards/eth_back.png'"
-                class="h-full w-full object-contain object-center lg:h-full lg:w-full">
-            </div>
+  <div class="wrapper">
+    <div class="rapper">
+      <div class="tableRoom">
+        <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
+
+        <!-- Player -->
+        <ul role="list">
+          <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()">
+            <h6>
+              <% i + 1 %>. <% player %>
+            </h6>
+            <p>Admin</p>
+            <p>Chips Bet: <% bettingRoundChips[i] %></p>
+            <img :src="'https://effigy.im/a/' + player + '.png'">
+            <div v-for="card in cards">
+              <img :src="'./assets/img/cards/eth_back.png'">
+          </li>
+        </ul>
+
+        <!-- Community Cards -->
+        <div class="outliner">
+          <h2>Community Cards</h2>
+          <div v-for="card in communityCards">
+            <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
-      </li>
-    </ul>
 
-
-    <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-      <h2 class="text-2xl font-bold tracking-tight text-gray-900">Community Cards</h2>
-      <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-        <div v-for="card in communityCards" class="group relative">
-          <div
-            class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-20">
-            <img :src="'./assets/img/cards/' + card + '.png'"
-              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+        <!-- You -->
+        <div class="outliner">
+          <h2>
+            <% this.player_index + 1 %>. You (<% this.account %>)
+          </h2>
+          <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
+          <div v-for="card in cards">
+            <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="bg-white shadow-md rounded mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-      <h2 class="text-2xl font-bold tracking-tight text-gray-900">
-        <% this.player_index + 1 %>. You (<% this.account %>)
-      </h2>
-      <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %>
-      </p>
-      <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-        <div v-for="card in cards" class="group relative">
-          <div
-            class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
-            <img :src="'./assets/img/cards/' + card + '.png'"
-              class="h-full w-full object-contain object-center lg:h-full lg:w-full">
-          </div>
+      <div class="outliner">
+        <h2>
+          <% this.player_index + 1 %>. You (<% this.account %>)
+        </h2>
+        <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
+        </p>
+        <div v-for="card in cards">
+          <img :src="'./assets/img/cards/' + card + '.png'">
+        </div>
+        <div class="flex items-center justify-between my-4">
+          <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
+            Fold
+          </button>
+          <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
+            Check
+          </button>
+          <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
+            Call (<% highestChip - bettingRoundChips[player_index] %>)
+          </button>
+          <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
+            Raise
+          </button>
+          <input
+            :disabled='!isMyTurn'
+            v-model.trim="raiseAmount"
+            id="raiseAmount"
+            type="text"
+            placeholder="Raise Amount"
+          >
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
-    <h2 class="text-2xl font-bold tracking-tight text-gray-900">
-      <% this.player_index + 1 %>. You (<% this.account %>)
-    </h2>
-    <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %>
-    </p>
-    <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-      <div v-for="card in cards" class="group relative">
+      
+      <div v-if="spinner"
+        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
         <div
-          class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-40">
-          <img :src="'./assets/img/cards/' + card"
-            class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+          class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
+          Waiting for transaction...
         </div>
       </div>
-    </div>
-    <div class="flex items-center justify-between my-4">
-      <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)"
-        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        type="button">
-        Fold
-      </button>
-      <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)"
-        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        type="button">
-        Check
-      </button>
-      <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)"
-        class="whitespace-nowrap disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        type="button">
-        Call (<% highestChip - bettingRoundChips[player_index] %>)
-      </button>
-      <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)"
-        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        type="button">
-        Raise
-      </button>
-      <input :disabled='!isMyTurn' v-model.trim="raiseAmount"
-        class="disabled:mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        id="raiseAmount" type="text" placeholder="Raise Amount">
-    </div>
-  </div>
-  <div v-if="spinner"
-    class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-    <div
-      class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
-      Waiting for transaction...
-    </div>
-  </div>
-  <div v-if="error != null"
-    class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-    <div class="p-8">
-      <h1 class="text-2xl font-bold text-red-500">Error</h1>
-      <p class="text-lg text-red-500">
-        <% error %>
-      </p>
-      <button v-on:click="error = null"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        type="button">
-        Close
-      </button>
+      <div v-if="error != null"
+        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
+        <div class="p-8">
+          <h1 class="text-2xl font-bold text-red-500">Error</h1>
+          <p class="text-lg text-red-500">
+            <% error %>
+          </p>
+          <button v-on:click="error = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   </div>
     
@@ -179,13 +168,8 @@ var TableComponent = Vue.component("Table", {
   created: async function () {
     console.log("created table");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-
-      this.token = await TokenContract(this.provider);
+      await Init(this);
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
@@ -196,7 +180,6 @@ var TableComponent = Vue.component("Table", {
           this.update();
         }, 10000);
       }
-
 
       await this.update();
       xmtpClient = await initClient();

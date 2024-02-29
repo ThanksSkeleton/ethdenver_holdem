@@ -5,8 +5,6 @@
   }
 
   .whale {
-    <!-- background: center; -->
-    <!-- background-size: cover; -->
     width: 100%;
     padding-top: 400px;
     background-attachment: fixed;
@@ -28,6 +26,10 @@
     background-color: #057B03;
     border-radius: 40px;
     border: 10px solid black;
+  }
+
+  .balanceBox {
+    margin: 20px;
   }
 
   .tempForm {
@@ -68,6 +70,14 @@
     font-style: normal;
     font-size: 24px;
     letter-spacing: .1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ffc909;
+    margin: 0 20px;
+    margin-top: 20px;
+    text-shadow: -1px -1px 1px #555;
+    text-align: center;
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
   }
   
   h3 {
@@ -98,8 +108,8 @@
   }
 
   table thead tr {
-    border-top: 1px solid #ffc909;
-    border-bottom: 1px solid #ffc909;
+    border-top: 1px solid yellow;
+    border-bottom: 1px solid yellow;
     margin: 24px;
     padding: 8px;
   }
@@ -139,11 +149,11 @@
       
     <h1>Denver Hide'em</h1>
             
-    <p>
+    <p v-if="balance" class="balanceBox">
       You've got (<% balance %>) FISH tokens that you can play with on any of the open tables.
     </p>
 
-      <h2>Tables</h2>
+      <h2>Open Tables</h2>
     <table>
       <thead>
         <tr>
@@ -188,11 +198,9 @@
     </table>
 
 
-      <h3>Or</h3>
-
+      <h2>New Game</h2>
+      
       <join_table></join_table>
-
-      <!-- <button>New Table</button> -->
 
       <h3>About</h3>
       <p>
@@ -257,21 +265,14 @@ var NewGameComponent = Vue.component("NewGame", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-      
-      this.token = await TokenContract(this.provider);
+      await Init(this);
+
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
       });
-      this.secure_contract = await SecretPokerContract(this.provider);
-
       await this.update();
     } catch (e) {
       console.log('create ERR', e);
@@ -299,10 +300,6 @@ var NewGameComponent = Vue.component("NewGame", {
       } catch (e) {
         console.log('create ERR', e);
       }
-    },
-    create_game: async function () {
-      console.log("create_game");
-      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
     join_game: async function (num) {
       console.log("join_game", num);

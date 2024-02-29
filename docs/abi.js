@@ -8,7 +8,7 @@ var Provider;
 var Account;
 var xmtp;
 
-async function Init() {
+async function Init(component) {
   if (!sapphire) {
     sapphire = await import("https://cdn.jsdelivr.net/npm/@oasisprotocol/sapphire-paratime@1.3.2/+esm");
   }
@@ -35,7 +35,12 @@ async function Init() {
     Account = res[0];
   }
 
-  return { provider: Provider, account: Account };
+  component.account = Account;
+  component.provider = Provider;
+  
+  component.token = await TokenContract(Provider);
+  component.contract = await PokerContract(Provider);
+  component.secure_contract = await SecretPokerContract(Provider);
 }
 
 async function EnsureBaseSalt(provider, account, num) {
@@ -63,8 +68,7 @@ async function GenerateSalt(provider, account, num) {
 
 async function PokerContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
-
-    abi = [
+    let abi = [
         "function playHand(uint256 tableId, uint8 action, uint256 raiseAmount)",
         "function withdrawChips(uint256 amount, uint256 tableId)",
         "function chips(address player, uint256 tableId) public view returns (uint256)",
@@ -84,10 +88,9 @@ async function PokerContract(provider) {
     return new ethers.Contract(POKER, abi, signer);
 }
 
-async function SecretPokerContract(provider, secure) {
+async function SecretPokerContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
-
-    abi = [
+    let abi = [
         "function buyIn(uint256 tableId, uint256 amount, uint256 salt)",
     ];
     
@@ -97,8 +100,7 @@ async function SecretPokerContract(provider, secure) {
 
 async function TokenContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
-
-    abi = [
+    let abi = [
         "function mint(address, uint256)",
         "function balanceOf(address) public view returns (uint256)",
         "function allowance(address owner, address spender) public view returns (uint256)",

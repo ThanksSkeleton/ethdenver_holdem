@@ -39,9 +39,9 @@ library PokerHandValidation {
     }
 
     enum TableState {
-        Active, 
-        Inactive, // Awaiting Admin to Deal the Hole Cards
-        Showdown 
+        Active,  // Waiting for players to take actions
+        Inactive, // Waiting for enough Players to start the game
+        Showdown  // Waiting for players to submit their showdown hands
     }
 
     enum PlayerAction {
@@ -86,8 +86,7 @@ library PokerHandValidation {
         Flush,          // All five cards of the same suit, not in sequence
         FullHouse,      // Three of a kind with a pair
         FourOfAKind,    // Four cards of the same value
-        StraightFlush,  // Five cards in sequence, all of the same suit
-        RoyalFlush      // Ten, Jack, Queen, King, Ace, in the same suit
+        StraightFlush  // Five cards in sequence, all of the same suit
     }
 
     struct ShowdownHand 
@@ -96,6 +95,15 @@ library PokerHandValidation {
         uint h;
         // Remember that the user has to present these in canonical order
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
+    }
+
+    struct FullPlayerAction
+    {   
+        address player;
+        uint action;
+        uint raiseAmount;
+        // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
+        uint signature;
     }
 
     function HandRecognize(uint handType, uint8[5] memory cards) public pure returns (bool) {

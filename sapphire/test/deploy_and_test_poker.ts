@@ -9,7 +9,9 @@ import chai = require("chai");
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
+// import { BigNumber } from "ethers"; // Assuming you're using ethers.js or a similar library
+import { Poker, PokerHandValidation as PHV, } from "../typechain-types/contracts/Poker";
+import { PokerToken } from "../typechain-types/contracts/PokerToken"
 import { ContractFactory, Contract, Signer } from "ethers";
 const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
 
@@ -34,8 +36,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   let two_player_game_players : Signer[];
   let four_player_game_players : Signer[];
 
-
-
   const MINIMUM_BUY_IN_AMOUNT = 200;
   const TWO_PLAYERS = 2;
   const FOUR_PLAYERS = 4;
@@ -49,6 +49,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   const player3_salt = 3;
   const player4_salt = 4;  
   
+  let two_player_game_salts = [ player1_salt, player2_salt ]
   let four_player_game_salts = [player1_salt, player2_salt, player3_salt, player4_salt]
 
   const BETTING_ROUND_PREFLOP = 0;
@@ -61,28 +62,41 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   const PLAYER_ACTION_CHECK = 2;
   const PLAYER_ACTION_FOLD = 3;
 
-  const HAND_ID = 0;
+  // todo use enum
+  const HAND_TYPE_NO_HAND = 0;
+  const HAND_TYPE_HIGH_CARD = 1;
+  const HAND_TYPE_ONE_PAIR = 2;
+  const HAND_TYPE_TWO_PAIR = 3;
+  const HAND_TYPE_THREE_OF_A_KIND = 4;
+  const HAND_TYPE_STRAIGHT = 5;
+  const HAND_TYPE_FLUSH = 6;
+  const HAND_TYPE_FULL_HOUSE = 7;
+  const HAND_TYPE_FOUR_OF_A_KIND = 8;
+  const HAND_TYPE_STRAIGHT_FLUSH = 9;
+
+  const FIRST_HAND = 0;
+  const SECOND_HAND = 1;
 
   function zip<T, U>(array1: T[], array2: U[]): [T, U][] {
     return array1.map((item, index) => [item, array2[index]]);
   }
 
-  async function get_hole_cards_from_encrypted(player: Signer, salt: number): Promise<number[]>
+  async function get_hole_cards_from_encrypted(player: Signer, salt: number, hand_id: number): Promise<number[]>
   {
-    let encrypted_cards = await poker.encryptedPlayerCards(await player.getAddress(), TABLE_ID, HAND_ID);
+    let encrypted_cards = await poker.encryptedPlayerCards(await player.getAddress(), TABLE_ID, hand_id);
     console.log("cards - encrypted" + encrypted_cards);
 
-    let decrypted_cards = decrypt_hole_cards(salt, TABLE_ID, HAND_ID, encrypted_cards);
+    let decrypted_cards = decrypt_hole_cards(salt, TABLE_ID, hand_id, encrypted_cards);
     console.log("cards - decrypted" + decrypted_cards);
 
     return [decrypted_cards.card1, decrypted_cards.card2];
   }
 
-  async function buildMyCards(player: Signer, salt: number): Promise<Number[]> {
-    let hole_cards = await get_hole_cards_from_encrypted(player, salt); // Destructure the result of bar into bar0 and bar1
+  async function buildMyCards(player: Signer, salt: number, hand: number): Promise<Number[]> {
+    let hole_cards = await get_hole_cards_from_encrypted(player, salt, hand); // Destructure the result of bar into bar0 and bar1
     
     const inputs = [0, 1, 2, 3, 4];
-    const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, HAND_ID, value)); // Create an array of promises
+    const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, hand, value)); // Create an array of promises
     const tuples = await Promise.all(promiseArray); // Wait for all promises to resolve to tuples
     const cards = tuples.map((r) => Number(r.card)); // Extract only the "card" part from each tuple
 
@@ -111,7 +125,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     four_player_game_players = [player1, player2, player3, player4]
 
     let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-    let lib = await factoryLib.deploy() as PokerHandValidation;
+    let lib = await factoryLib.deploy() as Contract;
     let lib_deployed = await lib.waitForDeployment();
 
     let factory1 = await ethers.getContractFactory('Poker', {
@@ -134,6 +148,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   async function two_player_table_setup() 
   {
+    console.log("2P SETUP");
     await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, TWO_PLAYERS, BIG_BLIND, await poker_token.getAddress());
 
     await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
@@ -142,6 +157,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   async function four_player_table_setup() 
   {
+    console.log("4P SETUP");
     await poker.connect(player1).createTable(MINIMUM_BUY_IN_AMOUNT, FOUR_PLAYERS, BIG_BLIND, await poker_token.getAddress());
 
     await poker.connect(player1).buyIn(TABLE_ID, BUY_IN_AMOUNT, player1_salt);
@@ -150,14 +166,20 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player4).buyIn(TABLE_ID, BUY_IN_AMOUNT, player4_salt);
   }
 
-  async function four_player_advance_to_flop() 
+  async function four_player_advance_to_flop(do_setup : Boolean) 
   {
-    await four_player_table_setup()
+    if (do_setup) {
+      await four_player_table_setup()
+    }
+
+    console.log("PREFLOP - EVERYONE RAISES");
 
     for (let [index, player] of four_player_game_players.entries()) 
     {
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
     }
+
+    console.log("PREFLOP - EVERYONE EXCEPT P4 CALLS");
 
     for (let [index, player] of four_player_game_players.entries()) 
     {
@@ -168,24 +190,124 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     }
   }
 
-  async function four_player_advance_to_showdown() 
+  async function buildFullPlayerAction(player: Signer, action: number, raiseAmount: number) : Promise<PHV.FullPlayerActionStruct>
   {
-    await four_player_advance_to_flop();
-    // Everyone checks flop
+    // struct FullPlayerAction
+    // {   
+    //     address player;
+    //     uint action;
+    //     uint raiseAmount;
+    //     // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
+    //     uint signature;
+    // }
+
+    let address = await player.getAddress();
+
+    let fullPlayerAction : PHV.FullPlayerActionStruct = {
+      player: address, 
+      action: action, 
+      raiseAmount: BigInt(raiseAmount),
+      signature: 0,
+    };
+
+    return fullPlayerAction;
+  }
+
+  async function four_player_advance_to_flop_batch(do_setup : Boolean) 
+  {
+    if (do_setup) {
+      await four_player_table_setup()
+    }
+
+    console.log("PREFLOP - EVERYONE RAISES");
+
+    let batch_raises : PHV.FullPlayerActionStruct[] =
+    [
+      await buildFullPlayerAction(player1, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player2, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player3, PLAYER_ACTION_RAISE, 20),
+      await buildFullPlayerAction(player4, PLAYER_ACTION_RAISE, 20)
+    ];
+
+    await poker.connect(stranger).playHand_batch(TABLE_ID, batch_raises);
+
+    let batch_calls : PHV.FullPlayerActionStruct[] =
+    [
+      await buildFullPlayerAction(player1, PLAYER_ACTION_CALL, 0),
+      await buildFullPlayerAction(player2, PLAYER_ACTION_CALL, 0),
+      await buildFullPlayerAction(player3, PLAYER_ACTION_CALL, 0),
+    ];
+
+    await poker.connect(stranger).playHand_batch(TABLE_ID, batch_calls);
+  }
+
+  async function four_player_advance_to_showdown(do_setup: Boolean) 
+  {
+    await four_player_advance_to_flop(do_setup);
+
+    console.log("FLOP - EVERYONE CHECKS");
     for (let player of four_player_game_players) 
     {
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     }
-    // Everyone checks turn
+
+    console.log("TURN - EVERYONE CHECKS");
     for (let player of four_player_game_players) 
     {
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     }
-    // Everyone checks river
+
+    console.log("RIVER - EVERYONE CHECKS");
     for (let player of four_player_game_players) 
     {
       await poker.connect(player).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     }
+  }
+
+  async function four_player_submit_showdown(hand: number) 
+  {
+    console.log("SHOWDOWN - EVERYONE SUBMITS SHOWDOWN");
+
+    // For the hardcoded cards, we have 
+    // [0, 1] [2, 3] [4, 5] [6, 7] --- [8 9 10 11 12]
+    // technically - 
+    // everyone has a straight flush with the community cards - but ignore for now
+    // Player1, Player2, Player3, will submit Flushes combining their hole and community
+    // Player4 will submit a Straight Flush combining their hole and community
+
+    let showdown_hand_submissions : [Signer, number, number[]][]= 
+    [
+      [player1, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 1 0
+      [player2, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 3 2
+      [player3, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 4 5
+      [player4, HAND_TYPE_STRAIGHT_FLUSH, [4,3,2,1,0]], // Straight Flush 10 9 8 7 6  - Winner
+    ]
+
+    for (let shs of showdown_hand_submissions) 
+    {
+      let address = await shs[0].getAddress();
+      let hand_type = BigInt(shs[1]);
+
+      let showdownHand : PHV.ShowdownHandStruct = {
+        playerAddress: address, // Example Ethereum address
+        h: BigInt(hand_type), // BigNumberish can be a string for large numbers
+        cardIndexes: [
+          BigInt(shs[2][0]),
+          BigInt(shs[2][1]),
+          BigInt(shs[2][2]),
+          BigInt(shs[2][3]),
+          BigInt(shs[2][4]),
+        ],
+      };
+
+      await poker.connect(shs[0]).addShowDownHand(TABLE_ID, hand, showdownHand);
+    }
+  }
+
+  async function four_player_play_entire_game(do_setup: Boolean, hand: number) 
+  {
+    await four_player_advance_to_showdown(do_setup);
+    await four_player_submit_showdown(hand);
   }
 
   async function summarize_chips_four_players(betting_round: number) 
@@ -225,19 +347,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   it('Two Player Game Gives them decryptable encrypted Cards, + Raise', async () => {
     await two_player_table_setup(); 
 
-    // confirm that there are cards
-    let p1_encrypted_cards = await poker.encryptedPlayerCards(await player1.getAddress(), TABLE_ID, HAND_ID);
-    console.log("p1 - encrypted" + p1_encrypted_cards);
-
-    let p1_decrypted_cards = decrypt_hole_cards(player1_salt, TABLE_ID, HAND_ID, p1_encrypted_cards);
-    console.log("p1 - decrypted" + p1_decrypted_cards);
-
-    let p2_encrypted_cards = await poker.encryptedPlayerCards(await player2.getAddress(), TABLE_ID, HAND_ID);
-    console.log("p2 - encrypted" + p2_encrypted_cards);
-
-    let p2_decrypted_cards = decrypt_hole_cards(player2_salt, TABLE_ID, HAND_ID, p2_encrypted_cards);
-    console.log("p2 - decrypted" + p2_decrypted_cards);
-
     let br_chips = await poker.bettingRoundChips(TABLE_ID, 0);
     console.log("All Betting Round chips " + br_chips);
 
@@ -253,8 +362,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     let betting_round = await poker.bettingRounds(TABLE_ID, 0);
     console.log("Current player turn " + betting_round.turn);
-
-    await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 20);
   });
 
   it('Four Player Game - Raising and then Calling in a circle', async () => 
@@ -291,7 +398,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   it('Four Player Game - Transition from Preflop to Flop', async () => 
   {
-    await four_player_advance_to_flop(); 
+    await four_player_advance_to_flop(true); 
 
     console.log("Pot is now: " + (await poker.tables(TABLE_ID)).pot);
 
@@ -299,7 +406,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     for (let i in [0, 1, 2, 3, 4]) 
     {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, FIRST_HAND, i);
       console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
     }
     let table = await poker.tables(TABLE_ID);
@@ -313,7 +420,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     for (let i in [0, 1, 2, 3, 4]) 
     {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, FIRST_HAND, i);
       console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
     }
     let table2 = await poker.tables(TABLE_ID);
@@ -327,7 +434,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     for (let i in [0, 1, 2, 3, 4]) 
     {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, FIRST_HAND, i);
       console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
     }
     let table3 = await poker.tables(TABLE_ID);
@@ -341,7 +448,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     for (let i in [0, 1, 2, 3, 4]) 
     {
-      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, HAND_ID, i);
+      let community_card_expected = await poker.revealedCommunityCards(TABLE_ID, FIRST_HAND, i);
       console.log("Community Card #: " + i + " " + community_card_expected[0] + " Valid?: " + community_card_expected[1])
     }
     let table4 = await poker.tables(TABLE_ID);
@@ -395,29 +502,41 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   it('Four Player Game - Showdown Tests', async () => 
   {
-    await four_player_advance_to_showdown(); 
+    await four_player_advance_to_showdown(true); 
 
     let pot = (await poker.tables(TABLE_ID)).pot;
     console.log("Pot is: "+ pot);
 
     for (let [signer, salt] of zip(four_player_game_players, four_player_game_salts)) 
     {
-      console.log("Player Cards: " + await buildMyCards(signer, salt));
+      console.log("Player Cards: " + await buildMyCards(signer, salt, 0));
     }
 
-    // For the hardcoded cards, we have 
-    // [0, 1] [2, 3] [4, 5] [6, 7] --- [8 9 10 11 12]
-    // technically - 
-    // everyone has a straight flush with the community cards - but ignore for now
-    // Player1, Player2, Player3, will submit Flushes combining their hole and community
-    // Player4 will submit a Straight Flush combining their hole and community
-    
+    // Should fail, nobody can play hands during showdown
+    // await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 40);
 
+    await four_player_submit_showdown(FIRST_HAND);
 
+    let table_state = (await poker.tables(TABLE_ID)).state
+    console.log("Table state is ", table_state)
+
+    for (let player of four_player_game_players) 
+    {
+      let player_chips = await poker.chips(await player.getAddress(), TABLE_ID);
+      console.log("This Player has " + player_chips + " chips");
+    }
   });
 
+  it('Four Player Game - Second Hand Game Tests', async () => 
+  {
+     await four_player_play_entire_game(true, FIRST_HAND);
+     await four_player_play_entire_game(false, SECOND_HAND);
+  });
 
+  it('Four Player Game - Batch Actions', async () => 
+  {
+     await four_player_advance_to_flop_batch(true);
 
-
+  });
 
 });
