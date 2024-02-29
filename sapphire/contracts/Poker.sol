@@ -166,6 +166,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         // initiate chips with the small blind and the big blind
         for (uint i=0; i < numPlayers; i++) {
             if (i == (numPlayers-2)) { // the second to last player, which gets the small blind
+
                 // small blinds
                 bettingRound.chips.push(table.bigBlind / 2);
                 chips[table.players[i]][_tableId] -= table.bigBlind / 2;
@@ -206,12 +207,29 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }
 
     /// @param _raiseAmount only required in case of raise. Else put zero. This is the amount you are putting in addition to what you have already put in this round
-    function playHand(uint _tableId, PokerHandValidation.PlayerAction _action, uint _raiseAmount) external {
+    function playHand(uint _tableId, PokerHandValidation.PlayerAction _action, uint _raiseAmount) external 
+    {
+        playHand_inner(_tableId, _action, _raiseAmount, msg.sender);
+    }
+
+    function playHand_batch(uint _tableId, PokerHandValidation.FullPlayerAction[] memory fullactions) external
+    {
+        // TODO
+        // ValidateBatch(fullActions)
+
+        for (uint i=0; i < fullactions.length; i++) 
+        { 
+            playHand_inner(_tableId, fullactions[i].action, fullactions[i].raiseAmount, fullactions[i].player);
+        }
+    }
+
+    function playHand_inner(uint _tableId, PokerHandValidation.PlayerAction _action, uint _raiseAmount, address player) internal
+    {
         PokerHandValidation.Table storage table = tables[_tableId];
         require(table.state == PokerHandValidation.TableState.Active, "Table is inactive, or Table is in showdown");
         
         PokerHandValidation.BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
-        require(table.players[bettingRound.turn] == msg.sender, "Not your turn");
+        require(table.players[bettingRound.turn] == player, "Not your turn");
 
         if (_action == PokerHandValidation.PlayerAction.Call) {
             // in case of calling
@@ -224,7 +242,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             // Pattern - take from player chips
             // Mark as contributed for Round
             // add to pot
-            chips[msg.sender][_tableId] -= callAmount;
+            chips[player][_tableId] -= callAmount;
             bettingRound.chips[bettingRound.turn] += callAmount;
             table.pot += callAmount;
             
@@ -248,7 +266,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             // Pattern - take from player chips
             // Mark as contributed for Round
             // add to pot
-            chips[msg.sender][_tableId] -= myRequiredContribution;
+            chips[player][_tableId] -= myRequiredContribution;
             bettingRound.chips[bettingRound.turn] += myRequiredContribution;
             table.pot += myRequiredContribution;
 
@@ -260,7 +278,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             // TODO new fold logic
         }
 
-        _finishRound(_tableId, table);       
+        _finishRound(_tableId, table);   
     }
 
     function addShowDownHand(uint _tableId, uint _handId, PokerHandValidation.ShowdownHand memory showdownHand) external {
@@ -327,47 +345,47 @@ contract Poker is Ownable, StaticPokerHandProvider {
         ]; // Example return statement
     }
 
-function areAllHandsSubmitted(uint _tableId, uint _handId) 
-    private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
-    
-    PokerHandValidation.Table storage table = tables[_tableId];
-    PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
-    
-    uint nonFoldedCount = 0; // Counter for non-folded players
-    uint validHandCount = 0; // Counter for valid showdown hands found
+    function areAllHandsSubmitted(uint _tableId, uint _handId) 
+        private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
+        
+        PokerHandValidation.Table storage table = tables[_tableId];
+        PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
+        
+        uint nonFoldedCount = 0; // Counter for non-folded players
+        uint validHandCount = 0; // Counter for valid showdown hands found
 
-    // First pass to count non-folded players and validate if a showdown hand is submitted
-    for (uint i = 0; i < table.players.length; i++) {
-        if (!bettingRoundInfo.has_folded[i]) { // Player has not folded
-            nonFoldedCount++;
-            address playerAddress = table.players[i];
-            if (showdownHands[playerAddress][_tableId][_handId].h != 0) { // Check if hand has been submitted
-                validHandCount++;
+        // First pass to count non-folded players and validate if a showdown hand is submitted
+        for (uint i = 0; i < table.players.length; i++) {
+            if (!bettingRoundInfo.has_folded[i]) { // Player has not folded
+                nonFoldedCount++;
+                address playerAddress = table.players[i];
+                if (showdownHands[playerAddress][_tableId][_handId].h != 0) { // Check if hand has been submitted
+                    validHandCount++;
+                }
             }
         }
-    }
 
-    allHandsSubmitted = (validHandCount == nonFoldedCount);
-    
-    // If not all hands are submitted, return early
-    if (!allHandsSubmitted) {
-        return (false, filteredShowdownHands); // 'filteredShowdownHands' is empty and will be ignored
-    }
+        allHandsSubmitted = (validHandCount == nonFoldedCount);
+        
+        // If not all hands are submitted, return early
+        if (!allHandsSubmitted) {
+            return (false, filteredShowdownHands); // 'filteredShowdownHands' is empty and will be ignored
+        }
 
-    // If all hands are submitted, proceed to construct the array of filtered showdown hands
-    filteredShowdownHands = new PokerHandValidation.ShowdownHand[](nonFoldedCount);
-    uint index = 0;
-    for (uint i = 0; i < table.players.length; i++) {
-        if (!bettingRoundInfo.has_folded[i]) {
-            address playerAddress = table.players[i];
-            if (showdownHands[playerAddress][_tableId][_handId].h != 0) {
-                filteredShowdownHands[index++] = showdownHands[playerAddress][_tableId][_handId];
+        // If all hands are submitted, proceed to construct the array of filtered showdown hands
+        filteredShowdownHands = new PokerHandValidation.ShowdownHand[](nonFoldedCount);
+        uint index = 0;
+        for (uint i = 0; i < table.players.length; i++) {
+            if (!bettingRoundInfo.has_folded[i]) {
+                address playerAddress = table.players[i];
+                if (showdownHands[playerAddress][_tableId][_handId].h != 0) {
+                    filteredShowdownHands[index++] = showdownHands[playerAddress][_tableId][_handId];
+                }
             }
         }
+        
+        return (true, filteredShowdownHands);
     }
-    
-    return (true, filteredShowdownHands);
-}
 
     function StartShowdown(PokerHandValidation.ShowdownHand[] memory hands, uint _tableId) internal 
     {

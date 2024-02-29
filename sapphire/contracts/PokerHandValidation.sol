@@ -97,6 +97,15 @@ library PokerHandValidation {
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
     }
 
+    struct FullPlayerAction 
+    {   
+        address player;
+        PokerHandValidation.PlayerAction action;
+        uint raiseAmount;
+        // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
+        uint signature;
+    }
+
     function HandRecognize(uint handType, uint8[5] memory cards) public pure returns (bool) {
         // TODO: Implement the logic to verify if the hand matches the handType
         // Assume It's truthful for now
