@@ -73,6 +73,7 @@
     padding-bottom: 8px;
     border-bottom: 1px dashed #ffc909;
     margin: 0 20px;
+    margin-top: 20px;
     text-shadow: -1px -1px 1px #555;
     text-align: center;
     -webkit-background-clip: text;
@@ -197,7 +198,6 @@
     </table>
 
 
-      <h3>Or</h3>
       <h2>New Game</h2>
       
       <join_table></join_table>
