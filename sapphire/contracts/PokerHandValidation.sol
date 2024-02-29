@@ -112,18 +112,15 @@ library PokerHandValidation {
         }
         return true; // If all cards match, return true
     }
-    function HandRecognize() public pure returns (bool)
-    {
-        // TODO IMPLEMENT
-        return true;
-    }
 
-    // function HandRecognize(HandType handType, uint8[5] memory cards) public pure returns (bool) {
-    //     // TODO: Implement the logic to verify if the hand matches the handType
-    //     // Assume It's truthful for now
-        
-    //     return true; // Placeholder return statement
-    // }
+    function HandRecognize(uint handType, uint8[5] memory cards) public pure returns (bool) {
+        // TODO: Implement the logic to verify if the hand matches the handType
+        // Assume It's truthful for now
+        HandType handTypeEnum = HandType(handType);
+
+
+        return true; // Placeholder return statement
+    }
 
     function DetermineWinners(ShowdownHand[] memory allhands) public pure returns (address[] memory) {
         // rank hands by HandType, then by internal cards (by the specific rule for that handtype)

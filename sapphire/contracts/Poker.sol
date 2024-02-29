@@ -291,8 +291,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         require(PokerHandValidation.handCardsExist(availableCards, showdownHand.cardIndexes, showdownHand.actualCards), "Invalid card submission");
         
         // Validate hand
-        //require(PokerHandValidation.HandRecognize(showdownHand.handType, showdownHand.actualCards), "Hand does not match the submitted type");
-        require(PokerHandValidation.HandRecognize(), "Hand does not match the submitted type");
+        require(PokerHandValidation.HandRecognize(showdownHand.h, showdownHand.actualCards), "Hand does not match the submitted type");
 
         // Store showdown hand
         showdownHands[msg.sender][_tableId][_handId] = showdownHand;
