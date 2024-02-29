@@ -1,31 +1,62 @@
 <style scoped>
+  .formFrame {
+    border-top: 1px solid yellow;
+    border-bottom: 1px solid yellow;
+    padding: 20px 0;
+  }
   label, input {
     display: inline;
+    padding: 8px;
+  }
+
+  input {
+    width: 80px;
+    border-radius: 8px;
+    margin-right: 12px;
   }
   button {
-    display: block;
+    display: inline;
+    font-family: "Playfair Display", serif;
+    border: 1px solid #FEE931;
+    color: #FEE931;
+    padding: 8px 18px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+    filter: drop-shadow(4px 4px 3px #333);
+    background-color: #195318;
   } 
+
 </style>
 
 <template id="join_table">
   <form>
+  <div class="formFrame">
     <label>
       Player Count
     </label>
-    <input v-model.trim="player_count"
-      id="player_count" type="text" placeholder="Player Count">
+    <input
+      v-model.trim="player_count"
+      id="player_count" type="text" placeholder="Player Count"
+    >
     <label>
       Buy In
     </label>
-    <input v-model.trim="buy_in"
-      id="buy_in" type="text" placeholder="Buy In Value">
+    <input
+      v-model.trim="buy_in"
+      id="buy_in"
+      type="text"
+      placeholder="Buy In Value"
+    >
     <button v-on:click="create_game()"
       type="button">
       Create Table
     </button>
-    <a>
-      Need help?
-    </a>
+  </div>
   </form>
 </template>
 <script>

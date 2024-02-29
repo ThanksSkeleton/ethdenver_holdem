@@ -5,8 +5,6 @@
   }
 
   .whale {
-    <!-- background: center; -->
-    <!-- background-size: cover; -->
     width: 100%;
     padding-top: 400px;
     background-attachment: fixed;
@@ -28,6 +26,10 @@
     background-color: #057B03;
     border-radius: 40px;
     border: 10px solid black;
+  }
+
+  .balanceBox {
+    margin: 20px;
   }
 
   .tempForm {
@@ -68,6 +70,13 @@
     font-style: normal;
     font-size: 24px;
     letter-spacing: .1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ffc909;
+    margin: 0 20px;
+    text-shadow: -1px -1px 1px #555;
+    text-align: center;
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
   }
   
   h3 {
@@ -98,8 +107,8 @@
   }
 
   table thead tr {
-    border-top: 1px solid #ffc909;
-    border-bottom: 1px solid #ffc909;
+    border-top: 1px solid yellow;
+    border-bottom: 1px solid yellow;
     margin: 24px;
     padding: 8px;
   }
@@ -139,11 +148,11 @@
       
     <h1>Denver Hide'em</h1>
             
-    <p>
+    <p v-if="balance" class="balanceBox">
       You've got (<% balance %>) FISH tokens that you can play with on any of the open tables.
     </p>
 
-      <h2>Tables</h2>
+      <h2>Open Tables</h2>
     <table>
       <thead>
         <tr>
@@ -189,10 +198,9 @@
 
 
       <h3>Or</h3>
-
+      <h2>New Game</h2>
+      
       <join_table></join_table>
-
-      <!-- <button>New Table</button> -->
 
       <h3>About</h3>
       <p>
