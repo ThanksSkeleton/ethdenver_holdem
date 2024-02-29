@@ -1,7 +1,31 @@
 <style scoped>
+
+  .wrapper {
+    height: 100%;
+  }
+
+  .whale {
+    <!-- background: center; -->
+    <!-- background-size: cover; -->
+    width: 100%;
+    padding-top: 400px;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    background-image: url('./assets/img/background.webp');
+  }
+
+  .rapper {
+    padding-bottom: 200px;;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
   .landingTable {
+    width: 700px;
     background-color: #057B03;
-    margin: 25%;
     border-radius: 40px;
     border: 10px solid black;
   }
@@ -43,7 +67,7 @@
     font-weight: <weight>;
     font-style: normal;
     font-size: 24px;
-    letter-spacing: .2rem;
+    letter-spacing: .1rem;
   }
   
   h3 {
@@ -51,8 +75,8 @@
     font-optical-sizing: auto;
     font-weight: <weight>;
     font-style: normal;
-    font-size: 18px;
-    letter-spacing: .2rem;
+    font-size: 20px;
+    letter-spacing: .1rem;
     margin: 20px;
   }
   h3::before, h4::before {
@@ -107,7 +131,9 @@
 </style>
   
 <template id="new_game">
-
+  <div class="wrapper">
+  <div class="whale">
+  <div class="rapper">
   <div class="landingTable">
     <div class="felt">
       
@@ -206,6 +232,9 @@
       </div>
       
     </div>
+  </div>
+  </div>
+  </div>
   </div>
     
 </template>

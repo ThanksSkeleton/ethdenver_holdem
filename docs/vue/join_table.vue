@@ -1,3 +1,12 @@
+<style scoped>
+  label, input {
+    display: inline;
+  }
+  button {
+    display: block;
+  } 
+</style>
+
 <template id="join_table">
   <form>
     <label>
