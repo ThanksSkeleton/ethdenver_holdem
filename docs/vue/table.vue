@@ -43,7 +43,7 @@
         <div v-for="card in communityCards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-20">
-            <img :src="'./assets/img/cards/' + card"
+            <img :src="'./assets/img/cards/' + card + '.png'"
               class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
@@ -60,7 +60,7 @@
         <div v-for="card in cards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
-            <img :src="'./assets/img/cards/' + card"
+            <img :src="'./assets/img/cards/' + card + '.png'"
               class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
@@ -135,7 +135,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
-      cards: ["eth_back.png", "eth_back.png"],
+      cards: ["eth_back", "eth_back"],
       ActionCall: 0,
       ActionRaise: 1,
       ActionCheck: 2,
@@ -202,7 +202,7 @@ var TableComponent = Vue.component("Table", {
         }
         
         let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-        let salt = localStorage.getItem('salt:' + this.table_index);
+        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
         if (salt == null) {
           this.error = 'salt is null';
           this.updating = false;
@@ -241,19 +241,24 @@ var TableComponent = Vue.component("Table", {
         };
         this.communityCards = communityCards;
 
+        if (this.communityCards.length > 0) {
+          let hand = Hand.solve(this.cards.concat(this.communityCards));
+          console.log('hand', hand);
+        }
+
       } catch (e) {
         console.log('create ERR', e);
       }
       this.updating = false;
     },
     numToCard: function (num) {
-      if (num == -1) return "eth_back.png";
+      if (num == -1) return "eth_back";
 
       let suit = Math.floor(num / 13);
       let value = num % 13;
       let suits = ['H', 'D', 'C', 'S'];
       let values = ['2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K', 'A'];
-      return values[value] + suits[suit] + ".png";
+      return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
       console.log('playHand');
