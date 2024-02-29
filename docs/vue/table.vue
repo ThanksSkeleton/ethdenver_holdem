@@ -81,6 +81,7 @@
   </div>
 </template>
 <script>
+var conversations; // TODO: no clue if this makes sense tbh
 var TableComponent = Vue.component("Table", {
   template: document.getElementById("table").innerHTML,
   delimiters: ["<%", "%>"],
@@ -109,7 +110,7 @@ var TableComponent = Vue.component("Table", {
     };
   },
   created: async function () {
-    console.log("created");
+    console.log("created table");
     try {
       let { provider, account } = await Init();
       this.account = account;
@@ -120,10 +121,14 @@ var TableComponent = Vue.component("Table", {
       this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
-        // await this.upda();
+        await this.update();
       });
 
       await this.update();
+      console.log('calling initClient()');
+      const xmptClient = await initClient();
+      console.log('calling inintConversations()');
+      conversations = await initConversations(this.players);
     } catch (e) {
       console.log('create ERR', e);
     }
@@ -170,6 +175,10 @@ var TableComponent = Vue.component("Table", {
     playHand: async function (action, raiseAmount) {
       console.log('playHand');
       // let tx = await this.contract.playHand(this.table_index, action, raiseAmount);
+      conversations.forEach(async convo => {
+        console.log(convo);
+        await convo.send(`${xmtpClient.address} ${action} ${raiseAmount}`);
+      })
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
       console.log('playHand', ret);
     },

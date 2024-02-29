@@ -18,7 +18,7 @@ async function Init() {
   }
 
   if (!xmtp) {
-    xmtp = await import("https://cdn.jsdelivr.net/npm/@xmtp/xmtp-js@11.3.14/+esm");
+    xmtp = await import("https://cdn.jsdelivr.net/npm/@xmtp/xmtp-js@11.0.0/+esm");
   }
 
   if (!Provider) {
