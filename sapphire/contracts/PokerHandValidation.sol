@@ -61,7 +61,7 @@ library PokerHandValidation {
         uint totalHands; // total Hands till now
         BettingRound currentBettingRound; // index of the current round
         uint buyInAmount;
-        uint maxPlayers;
+        uint8 maxPlayers;
         address[] players;
         uint pot;
         uint bigBlind;
@@ -76,16 +76,8 @@ library PokerHandValidation {
         uint[] chips; // the amount of chips each player has put in the round. This will be compared with the highestChip to check if the player has to call again or not.
     }
 
-    struct ShowdownHand 
-    {
-        PokerHandValidation.HandType handType;
-        // Remember that the user has to present these in canonical order
-        uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
-            //  You must choose your own cards + community cards obviously
-        uint8[5] actualCards; // Those same cards (the actual cards) in canonical order
-    }
-
     enum HandType {
+        NoHand,         // No Hand, should be impossible
         HighCard,       // Lowest value hand
         OnePair,        // Two cards of the same value
         TwoPair,        // Two different pairs
@@ -98,12 +90,15 @@ library PokerHandValidation {
         RoyalFlush      // Ten, Jack, Queen, King, Ace, in the same suit
     }
 
-	struct ShowdownHand_HeadToHead 
-	{
-		address player;		
-		HandType handType;
-		uint[5] actualCards; // Those same cards (the actual cards) in canonical order
-	}
+    struct ShowdownHand 
+    {
+        address playerAddress;
+        uint h;
+        // Remember that the user has to present these in canonical order
+        uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
+            //  You must choose your own cards + community cards obviously
+        uint8[5] actualCards; // Those same cards (the actual cards) in canonical order
+    }
 
     function handCardsExist(
         uint8[7] memory availableCards,
@@ -117,46 +112,51 @@ library PokerHandValidation {
         }
         return true; // If all cards match, return true
     }
-	
-    function HandRecognize(HandType handType, uint8[5] memory cards) public pure returns (bool) {
-        // TODO: Implement the logic to verify if the hand matches the handType
-        // Assume It's truthful for now
-        
-        return true; // Placeholder return statement
+    function HandRecognize() public pure returns (bool)
+    {
+        // TODO IMPLEMENT
+        return true;
     }
-	
-    function DetermineWinners(ShowdownHand_HeadToHead[] memory allhands) public returns (address[] memory) {
+
+    // function HandRecognize(HandType handType, uint8[5] memory cards) public pure returns (bool) {
+    //     // TODO: Implement the logic to verify if the hand matches the handType
+    //     // Assume It's truthful for now
+        
+    //     return true; // Placeholder return statement
+    // }
+
+    function DetermineWinners(ShowdownHand[] memory allhands) public pure returns (address[] memory) {
         // rank hands by HandType, then by internal cards (by the specific rule for that handtype)
         
-        ShowdownHand_HeadToHead[] memory bestHandsByType = BestHandTypes(allhands); // Corrected variable declaration
+        ShowdownHand[] memory bestHandsByType = BestHandTypes(allhands); // Corrected variable declaration
         if (bestHandsByType.length == 1) { // Corrected conditional syntax
             address[] memory winners = new address[](1); // Correct way to initialize an array with a single address
-            winners[0] = bestHandsByType[0].player; // Assuming .player is the correct field name for the address
+            winners[0] = bestHandsByType[0].playerAddress; // Assuming .player is the correct field name for the address
             return winners;
         } 
         
         return BestHand_SameTypes(bestHandsByType); 
     }
 	
-    function BestHandTypes(ShowdownHand_HeadToHead[] memory allhands) public pure returns (ShowdownHand_HeadToHead[] memory) {
+    function BestHandTypes(ShowdownHand[] memory allhands) public pure returns (ShowdownHand[] memory) {
         HandType highestHandType = HandType.HighCard; // Start with the lowest possible value
         uint count = 0;
 
         // First, find the highest HandType value
         for (uint i = 0; i < allhands.length; i++) {
-            if (allhands[i].handType > highestHandType) {
-                highestHandType = allhands[i].handType;
+            if (HandType(allhands[i].h) > highestHandType) {
+                highestHandType = HandType(allhands[i].h);
                 count = 1; // Reset count for new highest type
-            } else if (allhands[i].handType == highestHandType) {
+            } else if (HandType(allhands[i].h) == highestHandType) {
                 count++; // Increment count for matching highest type
             }
         }
 
         // Then, collect all hands of that HandType
-        ShowdownHand_HeadToHead[] memory bestHands = new ShowdownHand_HeadToHead[](count);
+        ShowdownHand[] memory bestHands = new ShowdownHand[](count);
         uint index = 0;
         for (uint i = 0; i < allhands.length; i++) {
-            if (allhands[i].handType == highestHandType) {
+            if (HandType(allhands[i].h) == highestHandType) {
                 bestHands[index] = allhands[i];
                 index++;
             }
@@ -165,12 +165,12 @@ library PokerHandValidation {
         return bestHands;
     }
 
-    function BestHand_SameTypes(ShowdownHand_HeadToHead[] memory contender_hands) public pure returns (address[] memory) {
+    function BestHand_SameTypes(ShowdownHand[] memory contender_hands) public pure returns (address[] memory) {
         // TODO: We need to compare multiple hands of the same type.
         // for now just select the first player as a single winner
 
         address[] memory winner = new address[](1); // Create a new dynamic array with 1 address element
-        winner[0] = contender_hands[0].player; // Assign the first hand's player address to the first element of the winner array
+        winner[0] = contender_hands[0].playerAddress; // Assign the first hand's player address to the first element of the winner array
         return winner; // Return the array containing the address
     }
 
@@ -378,8 +378,8 @@ library PokerHandValidation {
 
     // internal secret storage, but unencrypted
     struct PlayerCards {
-        uint hole1;
-        uint hole2;
+        uint8 hole1;
+        uint8 hole2;
     }
 
     struct EncryptedCards 
@@ -391,14 +391,12 @@ library PokerHandValidation {
     // internal secret storage, but unencrypted
     struct CommunityCards 
     {
-        uint[5] allcards; 
+        uint8[5] allcards; 
     }
 
     struct RevealedCommunityCard 
     {
-        uint card;
+        uint8 card;
         bool valid;
     }
-
-
 }

@@ -24,7 +24,7 @@ contract PokerHandProvider {
     // community_index: 0,1,2 = Flop 3 = Fold 4 = River
     function reveal_community_card(uint table_id, uint handNum, uint community_index) internal
     {
-        uint card_actual = communityCards[table_id][handNum].allcards[community_index];
+        uint8 card_actual = communityCards[table_id][handNum].allcards[community_index];
         revealedCommunityCards[table_id][handNum][community_index] = PokerHandValidation.RevealedCommunityCard(card_actual, true);
         emit PokerHandValidation.CommunityCardRevealedEvent(table_id, handNum, community_index, card_actual);
     }

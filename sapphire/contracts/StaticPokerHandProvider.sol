@@ -18,13 +18,13 @@ contract StaticPokerHandProvider is PokerHandProvider
     // secretly store the community cards and the player cards, 
     // and broadcast the encrypted player cards 
     function populate_cards(uint table_id, uint handNum, address[] memory players) internal {
-        uint[] memory cards = generateCards(players.length*2 + 5);
-        for (uint player_index = 0; player_index < players.length; player_index++) {
-            uint hole_1_index = player_index * 2; 
-            uint hole_2_index = player_index * 2 + 1; 
+        uint8[] memory cards = generateCards(players.length*2 + 5);
+        for (uint8 player_index = 0; player_index < players.length; player_index++) {
+            uint8 hole_1_index = player_index * 2; 
+            uint8 hole_2_index = player_index * 2 + 1; 
 
-            uint hole_1_card = uint8(cards[hole_1_index]);
-            uint hole_2_card = uint8(cards[hole_2_index]);
+            uint8 hole_1_card = uint8(cards[hole_1_index]);
+            uint8 hole_2_card = uint8(cards[hole_2_index]);
 
             // store the cards secretly on chain
             playerCards[players[player_index]][table_id][handNum] = PokerHandValidation.PlayerCards(hole_1_card, hole_1_card);
@@ -55,9 +55,9 @@ contract StaticPokerHandProvider is PokerHandProvider
         );
     }
 
-    function generateCards(uint howMany) private pure returns (uint[] memory) {
-        uint[] memory toReturn = new uint[](howMany);
-        uint count = 0;
+    function generateCards(uint howMany) private pure returns (uint8[] memory) {
+        uint8[] memory toReturn = new uint8[](howMany);
+        uint8 count = 0;
         
         //DUMMY
         while (count < howMany) {
@@ -69,7 +69,7 @@ contract StaticPokerHandProvider is PokerHandProvider
     }
 
     function contains(uint[] memory array, uint value, uint arrayLength) private pure returns (bool) {
-        for (uint i = 0; i < arrayLength; i++) {
+        for (uint8 i = 0; i < arrayLength; i++) {
             if (array[i] == value) {
                 return true;
             }

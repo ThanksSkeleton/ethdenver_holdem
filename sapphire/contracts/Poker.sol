@@ -84,7 +84,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @param _maxPlayers The maximum number of players allowed in this table
     /// @param _bigBlind The big blinds for the table
     /// @param _token The token that will be used to bet in this table
-    function createTable(uint _buyInAmount, uint _maxPlayers, uint _bigBlind, address _token) external {
+    function createTable(uint _buyInAmount, uint8 _maxPlayers, uint _bigBlind, address _token) external {
        
        address[] memory empty;
        
@@ -291,82 +291,90 @@ contract Poker is Ownable, StaticPokerHandProvider {
         require(PokerHandValidation.handCardsExist(availableCards, showdownHand.cardIndexes, showdownHand.actualCards), "Invalid card submission");
         
         // Validate hand
-        require(PokerHandValidation.HandRecognize(showdownHand.handType, showdownHand.actualCards), "Hand does not match the submitted type");
-        
+        //require(PokerHandValidation.HandRecognize(showdownHand.handType, showdownHand.actualCards), "Hand does not match the submitted type");
+        require(PokerHandValidation.HandRecognize(), "Hand does not match the submitted type");
+
         // Store showdown hand
         showdownHands[msg.sender][_tableId][_handId] = showdownHand;
         
+        (bool allsubmitted, PokerHandValidation.ShowdownHand[] memory hands) = areAllHandsSubmitted(_tableId, _handId);
+
         // Check if all hands submitted and trigger Showdown if so
-        if (areAllHandsSubmitted(_tableId, _handId)) {
-            StartShowdown(_tableId, _handId);
+        if (allsubmitted) {
+            StartShowdown(hands, _tableId);
         }
     }
 
     function getAvailableCards(uint _tableId, uint _handId, address playerAddress) private view returns (uint8[7] memory) {
+        PokerHandValidation.PlayerCards memory playerCards  = playerCards[playerAddress][_tableId][_handId];
+        PokerHandValidation.CommunityCards memory communityCards = communityCards[_tableId][_handId];
         // Implementation to retrieve hole cards and community cards
         // Placeholder logic
-        return [1,2,3,4,5,6,7]; // Example return statement
+        return 
+        [
+        playerCards.hole1,
+        playerCards.hole2,
+        communityCards.allcards[0],
+        communityCards.allcards[1],
+        communityCards.allcards[2],
+        communityCards.allcards[3],
+        communityCards.allcards[4]
+        ]; // Example return statement
     }
 
-    function areAllHandsSubmitted(uint _tableId, uint _handId) private view returns (bool) {
-        // Implementation to check if all non-folded players have submitted their hands
-        // Placeholder logic
-        return true; // Example return statement
+function areAllHandsSubmitted(uint _tableId, uint _handId) 
+    private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
+    
+    PokerHandValidation.Table storage table = tables[_tableId];
+    PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
+    
+    uint nonFoldedCount = 0; // Counter for non-folded players
+    uint validHandCount = 0; // Counter for valid showdown hands found
+
+    // First pass to count non-folded players and validate if a showdown hand is submitted
+    for (uint i = 0; i < table.players.length; i++) {
+        if (!bettingRoundInfo.has_folded[i]) { // Player has not folded
+            nonFoldedCount++;
+            address playerAddress = table.players[i];
+            if (showdownHands[playerAddress][_tableId][_handId].h != 0) { // Check if hand has been submitted
+                validHandCount++;
+            }
+        }
     }
 
-    function StartShowdown(uint _tableId, uint _handId) private 
+    allHandsSubmitted = (validHandCount == nonFoldedCount);
+    
+    // If not all hands are submitted, return early
+    if (!allHandsSubmitted) {
+        return (false, filteredShowdownHands); // 'filteredShowdownHands' is empty and will be ignored
+    }
+
+    // If all hands are submitted, proceed to construct the array of filtered showdown hands
+    filteredShowdownHands = new PokerHandValidation.ShowdownHand[](nonFoldedCount);
+    uint index = 0;
+    for (uint i = 0; i < table.players.length; i++) {
+        if (!bettingRoundInfo.has_folded[i]) {
+            address playerAddress = table.players[i];
+            if (showdownHands[playerAddress][_tableId][_handId].h != 0) {
+                filteredShowdownHands[index++] = showdownHands[playerAddress][_tableId][_handId];
+            }
+        }
+    }
+    
+    return (true, filteredShowdownHands);
+}
+
+    function StartShowdown(PokerHandValidation.ShowdownHand[] memory hands, uint _tableId) internal 
     {
         // Trigger showdown process
         // Placeholder logic
-    }
 
+        address winner = PokerHandValidation.DetermineWinners(hands)[0];
 
-    /// @dev this method will be called by the offchain node with the
-    /// keys of each card hash & the card,  dealt in the dealCards function
-    /// this method will then verify them with the hashes stored 
-    /// evaluate the cards, and send the pot earnings to the winner
-    /// @notice only send the keys & cards of the players who are still living
-    function showdown(uint _tableId, uint[] memory _keys, PokerHandValidation.PlayerCards[] memory _cards) external onlyOwner {
-        PokerHandValidation.Table storage table = tables[_tableId];
-        // BettingRoundInfo memory bettingRound = bettingRounds[_tableId][BettingRound.AfterRiver];
+        PokerHandValidation.Table memory _table = tables[_tableId];
+        chips[winner][_tableId] += _table.pot;
 
-        require(table.state == PokerHandValidation.TableState.Showdown);
-
-        // uint n = bettingRound.players.length;
-        // require(_keys.length == n && _cards.length == n, "Incorrect arr length");
-
-        // // verify the player hashes
-        // for (uint i=0; i<n;i++) {
-        //     bytes32 givenHash1 = keccak256(abi.encodePacked(_keys[i], _cards[i].card1));
-        //     bytes32 givenHash2 = keccak256(abi.encodePacked(_keys[i], _cards[i].card2));
-
-        //     PlayerCardHashes memory hashes = playerHashes[bettingRound.players[i]][_tableId][table.totalHands];
-
-        //     require(hashes.card1Hash == givenHash1, "incorrect cards");
-        //     require(hashes.card2Hash == givenHash2, "incorrect cards");
-        // }
-
-        // now choose winner
-        address winner;
-        uint8 bestRank = 100;
-        
-        for (uint j=0; j < 4;  j++) {
-            address player = table.players[j];
-            // PlayerCards memory playerCards = _cards[j];
-            // uint8[] memory cCards = communityCards[_tableId];
-
-            uint8 rank = 1;
-
-            if (rank < bestRank) {
-                bestRank = rank;
-                winner = player;
-            }
-        }
-
-        // add to the winner's balance
-        require(winner != address(0), "Winner is zero address");
-        chips[winner][_tableId] += table.pot;
-        _reInitiateTable(table, _tableId);
+        _reInitiateTable(_tableId);
     }
 
     // This actually may not finish the round...
@@ -387,7 +395,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
             chips[_table.players[lastActiveIndex]][_tableId] += _table.pot;
 
             // re initiate the table
-            _reInitiateTable(_table, _tableId);
+            _reInitiateTable(_tableId);
         } else if (
         (pot_right && _bettingRound.highestChip == 0 && _bettingRound.turn == lastActiveIndex) // Scenario: Everyone has checked
         || 
@@ -442,8 +450,9 @@ contract Poker is Ownable, StaticPokerHandProvider {
     }   
 
     // Reinitiation preps the table for another game with the same players 
-    function _reInitiateTable(PokerHandValidation.Table storage _table, uint _tableId) internal {
-
+    function _reInitiateTable(uint _tableId) internal 
+    {
+        PokerHandValidation.Table storage _table = tables[_tableId];
         _table.state = PokerHandValidation.TableState.Inactive;
         _table.totalHands += 1;
         _table.currentBettingRound = PokerHandValidation.BettingRound.AfterPreflop;
