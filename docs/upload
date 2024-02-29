@@ -1,0 +1,18 @@
+#!/bin/bash
+# Create contract and set default entry point, based on tutorials here
+# - https://docs.web3url.io/tutorials-on-ethstorage-early-testnet/upload-your-first-file-folder-with-ethfs-uploader)
+# - https://docs.web3url.io/tutorials-on-ethstorage-early-testnet/register-your-first-w3ns-name
+#
+# Command to create contract:
+# > npx ethfs-uploader --create --privateKey $POKER_PUBLISH_KEY --chainId 3334
+#
+# This returned the address 0x7B9A7428d780E2b3fC893f9aab8c98A34358F2Fd
+# and registered a domain to it: https://poker.w3q.w3q-g.w3link.io/ using above w3ns tutorial 
+# 
+# Command to set default entry point:
+# > npx ethfs-uploader --default --address w3q-g:0x7B9A7428d780E2b3fC893f9aab8c98A34358F2Fd --file index.html --privateKey $POKER_PUBLISH_KEY
+
+# Now build and upload (update) the site
+bundle exec jekyll build
+npx ethfs-uploader _site w3q-g:0x7B9A7428d780E2b3fC893f9aab8c98A34358F2Fd --privateKey $POKER_PUBLISH_KEY
+

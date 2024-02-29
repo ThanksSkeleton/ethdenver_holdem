@@ -1,4 +1,4 @@
-const POKER = "0x7c73ea6D3ECc1a068eD7Ae6dAE6e210873af776e";
+const POKER = "0xcf78410DdfC51cC30c79c1DdC117F9941343214a";
 const TOKEN = "0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85";
 
 var ethers;
@@ -55,7 +55,10 @@ async function PokerContract(provider) {
         "function totalTables() public view returns (uint256)",
         "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
         "function encryptedPlayerCards(address player, uint256 tableId, uint256 hand) public view returns (bytes, bytes)",
-        "function bettingRounds(uint256 tableId, uint8 bettingRound) public view returns (tuple(bool state, uint256 turn, uint256 highestChip))",
+        "function bettingRounds(uint256 tableId, uint8 bettingRound) public view returns (tuple(uint256 turn, uint256 highestChip))",
+        "function bettingRoundChips(uint256 tableId, uint8 bettingRound) public view returns (uint256[])",
+        "function bettingRoundPlayers(uint256 tableId, uint8 bettingRound) public view returns (address[])",
+        "function revealedCommunityCards(uint256 tableId, uint256 hand, uint256 card) public view returns (tuple(uint256 card, bool valid))",
     ];
 
     let signer = await provider.getSigner();

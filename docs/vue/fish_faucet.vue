@@ -39,9 +39,8 @@ var FishFaucetComponent = Vue.component("FishFaucet", {
       this.provider = provider;
 
       this.address = this.account;
-      console.log('request accounts', res);
-      await AddChain();
-      this.token = await TokenContract(this.provider);
+      await AddChain(provider);
+      this.token = await TokenContract(provider);
     } catch (e) {
       console.log('create ERR', e);
     }
