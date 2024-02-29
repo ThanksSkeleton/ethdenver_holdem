@@ -1,7 +1,31 @@
 <style scoped>
+
+  .wrapper {
+    height: 100%;
+  }
+
+  .whale {
+    <!-- background: center; -->
+    <!-- background-size: cover; -->
+    width: 100%;
+    padding-top: 400px;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    background-image: url('./assets/img/background.webp');
+  }
+
+  .rapper {
+    padding-bottom: 200px;;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
   .landingTable {
+    width: 700px;
     background-color: #057B03;
-    margin: 25%;
     border-radius: 40px;
     border: 10px solid black;
   }
@@ -43,7 +67,7 @@
     font-weight: <weight>;
     font-style: normal;
     font-size: 24px;
-    letter-spacing: .2rem;
+    letter-spacing: .1rem;
   }
   
   h3 {
@@ -51,8 +75,8 @@
     font-optical-sizing: auto;
     font-weight: <weight>;
     font-style: normal;
-    font-size: 18px;
-    letter-spacing: .2rem;
+    font-size: 20px;
+    letter-spacing: .1rem;
     margin: 20px;
   }
   h3::before, h4::before {
@@ -107,59 +131,61 @@
 </style>
   
 <template id="new_game">
-
+  <div class="wrapper">
+  <div class="whale">
+  <div class="rapper">
   <div class="landingTable">
     <div class="felt">
       
-      <h1>Denver Hide'em</h1>
-              
-      <p>
-        You've got (<% balance %>) FISH tokens that you can play with on any of the open tables.
-      </p>
-      
+    <h1>Denver Hide'em</h1>
+            
+    <p>
+      You've got (<% balance %>) FISH tokens that you can play with on any of the open tables.
+    </p>
+
       <h2>Tables</h2>
-      <table>
-        <thead>
-          <tr>
+    <table>
+      <thead>
+        <tr>
             <th scope="col">Table</th>
             <th scope="col">Buy In</th>
             <th scope="col">Pot Size</th>
             <th scope="col">Players</th>
             <th scope="col">Big Blind</th>
             <th scope="col">
-              <span class="sr-only">Edit</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="table in tables">
-            <td><% table.index %></td>
-            <td><% table.state %></td>
-            <td><% table.totalHands %> </td>
-            <td><% table.currentRound %></td>
-            <td><% table.buyInAmount %></td>
-            <td><% table.players.length %> / <% table.maxPlayers %></td>
-            <td><% table.pot %></td>
-            <td><% table.bigBlind %></td>
-            <td><% table.chips %></td>
-            <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
-              class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+            <span class="sr-only">Edit</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="table in tables">
+          <td><% table.index %></td>
+          <td><% table.state %></td>
+          <td><% table.totalHands %> </td>
+          <td><% table.currentRound %></td>
+          <td><% table.buyInAmount %></td>
+          <td><% table.players.length %> / <% table.maxPlayers %></td>
+          <td><% table.pot %></td>
+          <td><% table.bigBlind %></td>
+          <td><% table.chips %></td>
+          <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
+            class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
               <button>
-                <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
-                  Join Table
-                </a>
+            <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
+              Join Table
+            </a>
               </button>
-            </td>
-            <td v-if="table.chips > 0">
+          </td>
+          <td v-if="table.chips > 0">
               <button>
                 <router-link :to="'/table/' + table.index">
-                  Go to Table
-                </router-link>
+              Go to Table
+            </router-link>
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
 
       <h3>Or</h3>
@@ -181,117 +207,119 @@
         The Decentralized Dealers, that's who...
       </p>
       
-      
-      <div v-if="spinner"
-        class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-        <div
-          class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
-          Waiting for transaction...
-        </div>
+
+    <div v-if="spinner"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div
+        class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
+        Waiting for transaction...
       </div>
-      
-      <div v-if="error != null"
-        class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg">
-          <h1 class="text-2xl font-bold text-red-500">Error</h1>
-          <p class="text-lg text-red-500">
-            <% error %>
-          </p>
-          <button v-on:click="error = null"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="button">
-            Close
-          </button>
-        </div>
-      </div>
-      
     </div>
+    
+    <div v-if="error != null"
+      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-8 rounded-lg">
+        <h1 class="text-2xl font-bold text-red-500">Error</h1>
+        <p class="text-lg text-red-500">
+          <% error %>
+        </p>
+        <button v-on:click="error = null"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          type="button">
+          Close
+        </button>
+      </div>
+    </div>
+    
+  </div>
+  </div>
+  </div>
+  </div>
   </div>
     
 </template>
 <script>
 
 
-  var NewGameComponent = Vue.component("NewGame", {
-    template: document.getElementById("new_game").innerHTML,
-    delimiters: ["<%", "%>"],
-    data: () => {
-      return {
-        spinner: false,
-        error: null,
-        table_name: "",
-        player_count: "4",
-        buy_in: "100",
-        balance: "loading",
-        chips: "loading",
-        tables: []
-      };
-    },
-    created: async function () {
-      console.log("created");
-      try {
-        let { provider, account } = await Init();
-        this.account = account;
-        this.provider = provider;
-        
-        this.token = await TokenContract(this.provider);
-        this.balance = await this.token.balanceOf(this.account);
-        this.contract = await PokerContract(this.provider);
-        this.contract.on([null], async (event) => {
-          console.log('event', event);
-          this.update();
-        });
-        this.secure_contract = await SecretPokerContract(this.provider);
+var NewGameComponent = Vue.component("NewGame", {
+  template: document.getElementById("new_game").innerHTML,
+  delimiters: ["<%", "%>"],
+  data: () => {
+    return {
+      spinner: false,
+      error: null,
+      table_name: "",
+      player_count: "4",
+      buy_in: "100",
+      balance: "loading",
+      chips: "loading",
+      tables: []
+    };
+  },
+  created: async function () {
+    console.log("created");
+    try {
+      let { provider, account } = await Init();
+      this.account = account;
+      this.provider = provider;
+      
+      this.token = await TokenContract(this.provider);
+      this.balance = await this.token.balanceOf(this.account);
+      this.contract = await PokerContract(this.provider);
+      this.contract.on([null], async (event) => {
+        console.log('event', event);
+        this.update();
+      });
+      this.secure_contract = await SecretPokerContract(this.provider);
 
-        await this.update();
+      await this.update();
+    } catch (e) {
+      console.log('create ERR', e);
+    }
+  },
+  methods: {
+    update: async function () {
+      console.log("update");
+      try {
+        let totalTables = await this.contract.totalTables();
+        let tables = [];
+        for (let i = 0; i < totalTables; i++) {
+          const table = await this.contract.tables(i);
+          const players = await this.contract.tablePlayers(i);
+          let chips = await this.contract.chips(this.account, i);
+          tables.push({
+            index: i, state: table.state,
+            totalHands: table.totalHands, currentRound: table.currentRound,
+            buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
+            bigBlind: table.bigBlind, token: table.token,
+            chips: chips, players: players
+          });
+        }
+        this.tables = tables;
       } catch (e) {
         console.log('create ERR', e);
       }
     },
-    methods: {
-      update: async function () {
-        console.log("update");
-        try {
-          let totalTables = await this.contract.totalTables();
-          let tables = [];
-          for (let i = 0; i < totalTables; i++) {
-            const table = await this.contract.tables(i);
-            const players = await this.contract.tablePlayers(i);
-            let chips = await this.contract.chips(this.account, i);
-            tables.push({
-              index: i, state: table.state,
-              totalHands: table.totalHands, currentRound: table.currentRound,
-              buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-              bigBlind: table.bigBlind, token: table.token,
-              chips: chips, players: players
-            });
-          }
-          this.tables = tables;
-        } catch (e) {
-          console.log('create ERR', e);
-        }
-      },
-      create_game: async function () {
-        console.log("create_game");
-        await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
-      },
-      join_game: async function (num) {
-        console.log("join_game", num);
-        let salt = NewSalt();
-        localStorage.setItem("salt:" + num, salt);
-        let table = this.tables[num];
-        try {
-          let allowance = await this.token.allowance(this.account, POKER);
-          if (allowance < table.buyInAmount) {
-            await TryTx(this, this.token.approve, [POKER, MaxUint256]);
-          }
-          let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
-          console.log('join_game', ret);
-          router.push({ path: '/table/' + num });
-        } catch (e) {
-          console.log('join_game ERR', e);
-        }
-      },
+    create_game: async function () {
+      console.log("create_game");
+      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
-  });
+    join_game: async function (num) {
+      console.log("join_game", num);
+      let salt = await GenerateSalt(this.provider, this.account, num);
+      let table = this.tables[num];
+      try {
+        let allowance = await this.token.allowance(this.account, POKER);
+        if (allowance < table.buyInAmount) {
+          await TryTx(this, this.token.approve, [POKER, MaxUint256]);
+        }
+        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
+        console.log('join_game', ret);
+        router.push({ path: '/table/' + num });
+      } catch (e) {
+        console.log('join_game ERR', e);
+      }
+    },
+  },
+});
 </script>

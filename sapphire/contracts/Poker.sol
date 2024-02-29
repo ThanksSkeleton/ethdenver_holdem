@@ -286,12 +286,17 @@ contract Poker is Ownable, StaticPokerHandProvider {
         
         // Get available cards
         uint8[7] memory availableCards = getAvailableCards(_tableId, _handId, msg.sender);
-        
-        // Validate cards
-        require(PokerHandValidation.handCardsExist(availableCards, showdownHand.cardIndexes, showdownHand.actualCards), "Invalid card submission");
-        
+        uint8[5] memory actualCards = 
+            [
+                availableCards[showdownHand.cardIndexes[0]],
+                availableCards[showdownHand.cardIndexes[1]],
+                availableCards[showdownHand.cardIndexes[2]],
+                availableCards[showdownHand.cardIndexes[3]],
+                availableCards[showdownHand.cardIndexes[4]]
+            ];
+
         // Validate hand
-        require(PokerHandValidation.HandRecognize(showdownHand.h, showdownHand.actualCards), "Hand does not match the submitted type");
+        require(PokerHandValidation.HandRecognize(showdownHand.h, actualCards), "Hand does not match the submitted type");
 
         // Store showdown hand
         showdownHands[msg.sender][_tableId][_handId] = showdownHand;
@@ -414,7 +419,9 @@ function areAllHandsSubmitted(uint _tableId, uint _handId)
 
                 // initiate the next round
                 bettingRounds[_tableId][_table.currentBettingRound] = PokerHandValidation.BettingRoundInfo({
-                    turn : 0,
+                    // start at the first unfolded player
+                    // i.e. the first unfolded player after the last player
+                    turn : PokerHandValidation.nextTurn(_table.players.length-1, _bettingRound.has_folded),
                     highestChip: 0,
 
                     chips: PokerHandValidation.createZeroArray(_bettingRound.chips.length),

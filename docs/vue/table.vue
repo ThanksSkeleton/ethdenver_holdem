@@ -1,7 +1,15 @@
 <style scoped>
-.tableRoom {
-  background: black;
-}
+  .tableRoom {
+    background: black;
+    background-image: url('../assets/img/poker_table.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+  }
+
+  ul {
+    width: 200px;
+  }
 </style>
 
 <template id="table">
@@ -43,7 +51,7 @@
         <div v-for="card in communityCards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-20">
-            <img :src="'./assets/img/cards/' + card"
+            <img :src="'./assets/img/cards/' + card + '.png'"
               class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
@@ -60,60 +68,79 @@
         <div v-for="card in cards" class="group relative">
           <div
             class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-40">
-            <img :src="'./assets/img/cards/' + card"
+            <img :src="'./assets/img/cards/' + card + '.png'"
               class="h-full w-full object-contain object-center lg:h-full lg:w-full">
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-between my-4">
-        <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)"
-          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          type="button">
-          Fold
-        </button>
-        <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)"
-          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          type="button">
-          Check
-        </button>
-        <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)"
-          class="whitespace-nowrap disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          type="button">
-          Call (<% highestChip - bettingRoundChips[player_index] %>)
-        </button>
-        <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)"
-          class="disabled:bg-gray-300 mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          type="button">
-          Raise
-        </button>
-        <input :disabled='!isMyTurn' v-model.trim="raiseAmount"
-          class="disabled:bg-gray-300 mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          id="raiseAmount" type="text" placeholder="Raise Amount">
-      </div>
-    </div>
-    <div v-if="spinner"
-      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-      <div
-        class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
-        Waiting for transaction...
-      </div>
-    </div>
-    <div v-if="error != null"
-      class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-      <div class="bg-white p-8 rounded-lg">
-        <h1 class="text-2xl font-bold text-red-500">Error</h1>
-        <p class="text-lg text-red-500">
-          <% error %>
-        </p>
-        <button v-on:click="error = null"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          type="button">
-          Close
-        </button>
-      </div>
     </div>
   </div>
+
+  <div class="mx-auto max-w-2xl px-2 py-4 sm:px-3 sm:py-6 lg:max-w-7xl lg:px-8 my-10">
+    <h2 class="text-2xl font-bold tracking-tight text-gray-900">
+      <% this.player_index + 1 %>. You (<% this.account %>)
+    </h2>
+    <p class="mt-1 truncate text-sm text-gray-500">Chips Bet: <% bettingRoundChips[this.player_index] %>
+    </p>
+    <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+      <div v-for="card in cards" class="group relative">
+        <div
+          class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-40">
+          <img :src="'./assets/img/cards/' + card"
+            class="h-full w-full object-contain object-center lg:h-full lg:w-full">
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-between my-4">
+      <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)"
+        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="button">
+        Fold
+      </button>
+      <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)"
+        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="button">
+        Check
+      </button>
+      <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)"
+        class="whitespace-nowrap disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="button">
+        Call (<% highestChip - bettingRoundChips[player_index] %>)
+      </button>
+      <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)"
+        class="disabled:mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="button">
+        Raise
+      </button>
+      <input :disabled='!isMyTurn' v-model.trim="raiseAmount"
+        class="disabled:mx-1 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        id="raiseAmount" type="text" placeholder="Raise Amount">
+    </div>
+  </div>
+  <div v-if="spinner"
+    class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
+    <div
+      class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
+      Waiting for transaction...
+    </div>
+  </div>
+  <div v-if="error != null"
+    class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
+    <div class="p-8">
+      <h1 class="text-2xl font-bold text-red-500">Error</h1>
+      <p class="text-lg text-red-500">
+        <% error %>
+      </p>
+      <button v-on:click="error = null"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        type="button">
+        Close
+      </button>
+    </div>
+  </div>
+    
 </template>
+
 <script>
 var xmtpClient;
 var conversations; // TODO: no clue if this makes sense tbh
@@ -137,7 +164,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
-      cards: ["eth_back.png", "eth_back.png"],
+      cards: ["eth_back", "eth_back"],
       ActionCall: 0,
       ActionRaise: 1,
       ActionCheck: 2,
@@ -206,7 +233,7 @@ var TableComponent = Vue.component("Table", {
         }
         
         let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-        let salt = localStorage.getItem('salt:' + this.table_index);
+        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
         if (salt == null) {
           this.error = 'salt is null';
           this.updating = false;
@@ -245,19 +272,24 @@ var TableComponent = Vue.component("Table", {
         };
         this.communityCards = communityCards;
 
+        if (this.communityCards.length > 0) {
+          let hand = Hand.solve(this.cards.concat(this.communityCards));
+          console.log('hand', hand);
+        }
+
       } catch (e) {
         console.log('create ERR', e);
       }
       this.updating = false;
     },
     numToCard: function (num) {
-      if (num == -1) return "eth_back.png";
+      if (num == -1) return "eth_back";
 
       let suit = Math.floor(num / 13);
       let value = num % 13;
       let suits = ['H', 'D', 'C', 'S'];
       let values = ['2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K', 'A'];
-      return values[value] + suits[suit] + ".png";
+      return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
       console.log('playHand');

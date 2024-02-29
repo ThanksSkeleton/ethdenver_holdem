@@ -12,6 +12,7 @@
     <script src="https://c0f4f41c-2f55-4863-921b-sdk-docs.github.io/cdn/metamask-sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-router@3.1.5/dist/vue-router.min.js"></script>
+    <script src="pokersolver.js"></script>
     <script src="abi.js"></script>
     <script src="wallet.js"></script>
     <script src="xmtp.js"></script>
@@ -23,84 +24,86 @@
         rel="stylesheet">
 </head>
 
-<body class="poker" style="background: center / cover no-repeat url('./assets/img/background.webp');">
-    {% include_relative vue/table.vue %}
-    {% include_relative vue/new_game.vue %}
-    {% include_relative vue/fish_faucet.vue %}
-    {% include_relative vue/join_table.vue %}
+<body class="poker" style="height: 100%">
 
-    <div id="app">
-        <transition>
-            <keep-alive>
-                <router-view></router-view>
-            </keep-alive>
-        </transition>
-    </div>
+    <body class="poker">
+        {% include_relative vue/table.vue %}
+        {% include_relative vue/new_game.vue %}
+        {% include_relative vue/fish_faucet.vue %}
+        {% include_relative vue/join_table.vue %}
+
+        <div id="app">
+            <transition>
+                <keep-alive>
+                    <router-view></router-view>
+                </keep-alive>
+            </transition>
+        </div>
 
 
-    <script>
+        <script>
 
-        const navigation = [
-            {name: 'Product', href: '#'},
-            {name: 'Features', href: '#'},
-            {name: 'Marketplace', href: '#'},
-            {name: 'Company', href: '#'},
-        ]
+            const navigation = [
+                {name: 'Product', href: '#'},
+                {name: 'Features', href: '#'},
+                {name: 'Marketplace', href: '#'},
+                {name: 'Company', href: '#'},
+            ]
 
-        const mobileMenuOpen = false;
-        let app = {};
+            const mobileMenuOpen = false;
+            let app = {};
 
-        var routes = [{
-            name: 'New Game',
-            path: '/',
-            component: NewGameComponent
-        },
-        {
-            name: 'FishFaucet',
-            path: '/fish_faucet/',
-            component: FishFaucetComponent
-        },
-        {
-            name: 'Table',
-            params: {
-                table_index: '0'
+            var routes = [{
+                name: 'New Game',
+                path: '/',
+                component: NewGameComponent
             },
-            path: '/table/:table_index',
-            component: TableComponent,
-            props: true,
-        }];
+            {
+                name: 'FishFaucet',
+                path: '/fish_faucet/',
+                component: FishFaucetComponent
+            },
+            {
+                name: 'Table',
+                params: {
+                    table_index: '0'
+                },
+                path: '/table/:table_index',
+                component: TableComponent,
+                props: true,
+            }];
 
-        const router = new VueRouter({
-            routes,
-            base: '/',
-            duplicateNavigationPolicy: 'reload'
-        });
+            const router = new VueRouter({
+                routes,
+                base: '/',
+                duplicateNavigationPolicy: 'reload'
+            });
 
-        router.beforeEach((to, from, next) => {
-            if (Object.values(to.params).length) {
-                for (i = 0; i < routes.length; i++) {
-                    let route = routes[i];
-                    if (route.name == to.name) {
-                        route.params = to.params
-                        if (app && app.$set) app.$set(app.routes, i, route)
-                        else routes[i] = route
+            router.beforeEach((to, from, next) => {
+                if (Object.values(to.params).length) {
+                    for (i = 0; i < routes.length; i++) {
+                        let route = routes[i];
+                        if (route.name == to.name) {
+                            route.params = to.params
+                            if (app && app.$set) app.$set(app.routes, i, route)
+                            else routes[i] = route
+                        }
                     }
                 }
-            }
-            next()
-        })
-        app = new Vue({
-            data: {
-                routes,
-                initial: 0,
-                connected: 0,
-                ticker: 1,
-            },
-            router,
-            delimiters: ["<%", "%>"]
-        })
-        app.$mount('#app')
-    </script>
-</body>
+                next()
+            })
+            app = new Vue({
+                data: {
+                    routes,
+                    initial: 0,
+                    connected: 0,
+                    ticker: 1,
+                },
+                router,
+                delimiters: ["<%", "%>"]
+            })
+            app.$mount('#app')
+        </script>
+    </body>
 
 </html>

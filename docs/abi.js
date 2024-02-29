@@ -38,8 +38,27 @@ async function Init() {
   return { provider: Provider, account: Account };
 }
 
-function NewSalt() {
-    return ethers.toQuantity(ethers.randomBytes(32));
+async function EnsureBaseSalt(provider, account, num) {
+  if (localStorage.getItem("baseSalt")) {
+    return localStorage.getItem("baseSalt");
+  }
+
+  let baseSalt = await provider.request({
+    "method": "personal_sign",
+    "params": [
+      ethers.hexlify(ethers.toUtf8Bytes("base table salt to keep your cards secret")),
+      account
+    ]
+  });
+  baseSalt = ethers.keccak256(baseSalt);
+  localStorage.setItem("baseSalt", baseSalt);
+  return baseSalt;
+}
+
+async function GenerateSalt(provider, account, num) {
+    let base = await EnsureBaseSalt(provider, account);
+    let table = ethers.keccak256(ethers.toUtf8Bytes("table: " + num));
+    return ethers.toQuantity(ethers.keccak256(ethers.solidityPacked(['bytes32', 'bytes32'], [base, table])));
 }
 
 async function PokerContract(provider) {
@@ -113,7 +132,7 @@ function HashDecryptCard(salt, table_id, handnum, encrypted) {
   for (let card = 0; card <= 51; card++) {
     // Generate the keccak256 hash of the concatenated salt, table_id, handnum, and card
     // console.log([salt, table_id, handnum, card])
-    const hash = ethers.keccak256(ethers.solidityPacked(['uint256', 'uint256', 'uint256', 'uint256'], [salt, table_id, handnum, card]));
+    const hash = ethers.keccak256(ethers.solidityPacked(['uint256', 'uint256', 'uint256', 'uint8'], [salt, table_id, handnum, card]));
 
     // Check if the generated hash matches the encrypted data
     if (hash === ethers.hexlify(encrypted)) {

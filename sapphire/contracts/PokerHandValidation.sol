@@ -96,21 +96,6 @@ library PokerHandValidation {
         uint h;
         // Remember that the user has to present these in canonical order
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
-            //  You must choose your own cards + community cards obviously
-        uint8[5] actualCards; // Those same cards (the actual cards) in canonical order
-    }
-
-    function handCardsExist(
-        uint8[7] memory availableCards,
-        uint8[5] memory cardIndexes,
-        uint8[5] memory myCards
-    ) public pure returns (bool) {
-        for (uint i = 0; i < cardIndexes.length; i++) {
-            if (availableCards[cardIndexes[i]] != myCards[i]) {
-                return false; // If any card does not match, return false
-            }
-        }
-        return true; // If all cards match, return true
     }
 
     function HandRecognize(uint handType, uint8[5] memory cards) public pure returns (bool) {
