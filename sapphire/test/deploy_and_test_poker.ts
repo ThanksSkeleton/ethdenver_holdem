@@ -67,6 +67,29 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     return array1.map((item, index) => [item, array2[index]]);
   }
 
+  async function get_hole_cards_from_encrypted(player: Signer, salt: number): Promise<number[]>
+  {
+    let encrypted_cards = await poker.encryptedPlayerCards(await player.getAddress(), TABLE_ID, HAND_ID);
+    console.log("cards - encrypted" + encrypted_cards);
+
+    let decrypted_cards = decrypt_hole_cards(salt, TABLE_ID, HAND_ID, encrypted_cards);
+    console.log("cards - decrypted" + decrypted_cards);
+
+    return [decrypted_cards.card1, decrypted_cards.card2];
+  }
+
+  async function buildMyCards(player: Signer, salt: number): Promise<Number[]> {
+    let hole_cards = await get_hole_cards_from_encrypted(player, salt); // Destructure the result of bar into bar0 and bar1
+    
+    const inputs = [0, 1, 2, 3, 4];
+    const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, HAND_ID, value)); // Create an array of promises
+    const tuples = await Promise.all(promiseArray); // Wait for all promises to resolve to tuples
+    const cards = tuples.map((r) => Number(r.card)); // Extract only the "card" part from each tuple
+
+    // Combine all values into a single array
+    return [hole_cards[0], hole_cards[1], ...cards];
+  }
+
 // // Example usage
 // const array1 = [1, 2, 3]; // Array of numbers
 // const array2 = ['a', 'b', 'c']; // Array of strings
@@ -185,17 +208,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     }
 
     console.log("End Summary")
-  }
-
-  async function get_hole_cards_from_encrypted(player: Signer, salt: number): Promise<number[]>
-  {
-    let encrypted_cards = await poker.encryptedPlayerCards(await player.getAddress(), TABLE_ID, HAND_ID);
-    console.log("cards - encrypted" + encrypted_cards);
-
-    let decrypted_cards = decrypt_hole_cards(salt, TABLE_ID, HAND_ID, encrypted_cards);
-    console.log("cards - decrypted" + decrypted_cards);
-
-    return [decrypted_cards[0], decrypted_cards[1]];
   }
 
   it('First Player leaves 2p game that has not started', async () => 
@@ -381,18 +393,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
   });
 
-  async function buildMyCards(player: Signer, salt: number): Promise<Number[]> {
-    let hole_cards = await get_hole_cards_from_encrypted(player, salt); // Destructure the result of bar into bar0 and bar1
-    
-    const inputs = [0, 1, 2, 3, 4];
-    const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, HAND_ID, value)); // Create an array of promises
-    const tuples = await Promise.all(promiseArray); // Wait for all promises to resolve to tuples
-    const cards = tuples.map((r) => Number(r.card)); // Extract only the "card" part from each tuple
-
-    // Combine all values into a single array
-    return [hole_cards[0], hole_cards[1], ...cards];
-  }
-  
   it('Four Player Game - Showdown Tests', async () => 
   {
     await four_player_advance_to_showdown(); 
@@ -402,7 +402,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     for (let [signer, salt] of zip(four_player_game_players, four_player_game_salts)) 
     {
-      console.log("Player Cards: " + buildMyCards(signer, salt));
+      console.log("Player Cards: " + await buildMyCards(signer, salt));
     }
   });
 

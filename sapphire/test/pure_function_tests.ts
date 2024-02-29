@@ -13,8 +13,6 @@ import {
   import { ContractFactory, Contract, Signer } from "ethers";
   const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
   
-  
-  
   import chaiAsPromised = require("chai-as-promised");
   
   chai.use(chaiAsPromised);
