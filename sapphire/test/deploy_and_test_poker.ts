@@ -318,15 +318,21 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
     // complete the round
 
+    console.log("BR 1 finished")
+
+    let br_after2 = await poker.bettingRounds(TABLE_ID, BETTING_ROUND_PREFLOP);
+    console.log("br.turn " + br_after2.turn, "br.highestChip " + br_after2.highestChip);
+
     // go through the next round skipping p1
     await poker.connect(player2).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     await poker.connect(player3).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
+
+    console.log("BR 2 finished")
 
     // go through the next round skipping p1
     await poker.connect(player2).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     await poker.connect(player3).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
     await poker.connect(player4).playHand(TABLE_ID, PLAYER_ACTION_CHECK, 0);
   });
-
 });
