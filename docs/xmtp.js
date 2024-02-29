@@ -12,10 +12,6 @@ async function initClient() {
   return xmtpClient;
 }
 
-async function canMessageRecipient(recipient) {
-    return await xmtpClient.canMessage(recipient);
-}
-
 async function listenForMessages() {
   for await (const message of await xmtpClient.conversations.streamAllMessages()) {
     if (message.senderAddress === xmtpClient.address) {
@@ -25,7 +21,6 @@ async function listenForMessages() {
     console.log(message.content);
   }
 }
-// TODO: I should batch this so you don't get spammed with msg signing
 async function initConversations(players) {
     conversations = [];
 
@@ -54,10 +49,12 @@ const PLAYER_ACTIONS_MAP = {
   3: "FOLD"
 };
 
-async function broadcastHand(players, action, raiseAmount) {
-  await xmtpClient.contacts.refreshConsentList();
+async function broadcastHand(conversations, action, raiseAmount) {
+  console.log('client trash');
+  console.log(xmtpClient.contacts);
+  // await xmtpClient.contacts.refreshConsentList();
   conversations.forEach(async convo => {
-    console.log(convo);
+    console.log(`${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} ${raiseAmount}`);
     await convo.send(`${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} ${raiseAmount}`);
   })
 }

@@ -201,7 +201,9 @@ var TableComponent = Vue.component("Table", {
       await this.update();
       xmtpClient = await initClient();
       conversations = await initConversations(this.players);
-      await xmtpClient.contacts.refreshConsentList();
+      console.log('before broadcast')
+      await broadcastHand(conversations, 0, 5)
+      console.log('after broadcast')
     } catch (e) {
       console.log('create ERR', e);
     }
@@ -293,7 +295,8 @@ var TableComponent = Vue.component("Table", {
     },
     playHand: async function (action, raiseAmount) {
       console.log('playHand');
-      await broadcastHand(players, action, raiseAmount)
+      await broadcastHand(conversations, action, raiseAmount)
+      console.log('after broadcast')
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
       console.log('playHand', ret);
     },
