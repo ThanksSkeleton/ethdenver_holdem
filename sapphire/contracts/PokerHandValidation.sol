@@ -86,8 +86,7 @@ library PokerHandValidation {
         Flush,          // All five cards of the same suit, not in sequence
         FullHouse,      // Three of a kind with a pair
         FourOfAKind,    // Four cards of the same value
-        StraightFlush,  // Five cards in sequence, all of the same suit
-        RoyalFlush      // Ten, Jack, Queen, King, Ace, in the same suit
+        StraightFlush  // Five cards in sequence, all of the same suit
     }
 
     struct ShowdownHand 

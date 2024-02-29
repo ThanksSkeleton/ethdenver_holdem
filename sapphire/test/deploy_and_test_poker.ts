@@ -9,6 +9,8 @@ import chai = require("chai");
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+// import { BigNumber } from "ethers"; // Assuming you're using ethers.js or a similar library
+
 import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
 import { ContractFactory, Contract, Signer } from "ethers";
 const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
@@ -60,6 +62,18 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
   const PLAYER_ACTION_RAISE = 1;
   const PLAYER_ACTION_CHECK = 2;
   const PLAYER_ACTION_FOLD = 3;
+
+  // todo use enum
+  const HAND_TYPE_NO_HAND = 0;
+  const HAND_TYPE_HIGH_CARD = 1;
+  const HAND_TYPE_ONE_PAIR = 2;
+  const HAND_TYPE_TWO_PAIR = 3;
+  const HAND_TYPE_THREE_OF_A_KIND = 4;
+  const HAND_TYPE_STRAIGHT = 5;
+  const HAND_TYPE_FLUSH = 6;
+  const HAND_TYPE_FULL_HOUSE = 7;
+  const HAND_TYPE_FOUR_OF_A_KIND = 8;
+  const HAND_TYPE_STRAIGHT_FLUSH = 9;
 
   const HAND_ID = 0;
 
@@ -405,15 +419,57 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       console.log("Player Cards: " + await buildMyCards(signer, salt));
     }
 
+    // Should fail, nobody can play hands during showdown
+    // await poker.connect(player1).playHand(TABLE_ID, PLAYER_ACTION_RAISE, 40);
+
     // For the hardcoded cards, we have 
     // [0, 1] [2, 3] [4, 5] [6, 7] --- [8 9 10 11 12]
     // technically - 
     // everyone has a straight flush with the community cards - but ignore for now
     // Player1, Player2, Player3, will submit Flushes combining their hole and community
     // Player4 will submit a Straight Flush combining their hole and community
-    
+
+    let showdown_hand_submissions : [Signer, number, number[]][]= 
+    [
+      [player1, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 1 0
+      [player2, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 3 2
+      [player3, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 4 5
+      [player4, HAND_TYPE_STRAIGHT_FLUSH, [4,3,2,1,0]], // Straight Flush 10 9 8 7 6  - Winner
+    ]
+
+    for (let shs of showdown_hand_submissions) 
+    {
+      let address = await shs[0].getAddress();
+      console.log("address: "+ address);
+      let hand_type = BigInt(shs[1]);
+      console.log("hand_type: "+ hand_type);
+
+      let showdownHand : PokerHandValidation.ShowdownHandStruct = {
+        playerAddress: address, // Example Ethereum address
+        h: BigInt(hand_type), // BigNumberish can be a string for large numbers
+        cardIndexes: [
+          BigInt(shs[2][0]),
+          BigInt(shs[2][1]),
+          BigInt(shs[2][2]),
+          BigInt(shs[2][3]),
+          BigInt(shs[2][4]),
+        ],
+      };
+
+      await poker.connect(shs[0]).addShowDownHand(TABLE_ID, HAND_ID, showdownHand);
+    }
+
+    let table_state = (await poker.tables(TABLE_ID)).state
+    console.log("Table state is ", table_state)
+
+    for (let player of four_player_game_players) 
+    {
+      let player_chips = await poker.chips(await player.getAddress(), TABLE_ID);
+      console.log("This Player has " + player_chips + " chips");
+    }
 
 
+    // TODO check that player 4 has won
   });
 
 

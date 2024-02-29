@@ -207,7 +207,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     /// @param _raiseAmount only required in case of raise. Else put zero. This is the amount you are putting in addition to what you have already put in this round
     function playHand(uint _tableId, PokerHandValidation.PlayerAction _action, uint _raiseAmount) external {
         PokerHandValidation.Table storage table = tables[_tableId];
-        require(table.state == PokerHandValidation.TableState.Active, "No Active Round");
+        require(table.state == PokerHandValidation.TableState.Active, "Table is inactive, or Table is in showdown");
         
         PokerHandValidation.BettingRoundInfo storage bettingRound = bettingRounds[_tableId][table.currentBettingRound];
         require(table.players[bettingRound.turn] == msg.sender, "Not your turn");
