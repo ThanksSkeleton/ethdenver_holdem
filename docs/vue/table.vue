@@ -18,18 +18,41 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 4px solid blue;
   }
 
-  .outliner {
-    border: 1px solid red;
+  .opponent {
+    width: 300px;
+    height: 200px;
+    overflow: scroll;
+    border: 1px solid green;
+  }
+  .opponent img {
+    width: 100px;
+    height: 100px;
+  }
+  .opponent div img {
+    width: 80px;
+  }
+
+  .communityCards {
     width: 500px;
     height: 200px;
-    overflow: hidden;
+    overflow: scroll;
   }
 
-  ul {
-    width: 200px;
+  .player {
+    width: 500px;
+    height: 200px;
+    overflow: scroll;
   }
+
+  .controls {
+    width: 500px;
+    height: 200px;
+    overflow: scroll;
+  }
+  
 </style>
 
 <template id="table">
@@ -39,21 +62,24 @@
         <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
 
         <!-- Player -->
-        <ul role="list">
-          <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()">
-            <h6>
-              <% i + 1 %>. <% player %>
-            </h6>
-            <p>Admin</p>
-            <p>Chips Bet: <% bettingRoundChips[i] %></p>
-            <img :src="'https://effigy.im/a/' + player + '.png'">
-            <div v-for="card in cards">
-              <img :src="'./assets/img/cards/eth_back.png'">
-          </li>
-        </ul>
+        <div
+          class="opponent"
+          v-for="(player, i) in players"
+          v-if="player.toLowerCase() != account.toLowerCase()"
+        >
+          <h6>
+            <% i + 1 %>. <% player %>
+          </h6>
+          <p>Admin</p>
+          <p>Chips Bet: <% bettingRoundChips[i] %></p>
+          <img :src="'https://effigy.im/a/' + player + '.png'">
+          <div v-for="card in cards">
+            <img :src="'./assets/img/cards/eth_back.png'">
+          </div>
+        </div>
 
         <!-- Community Cards -->
-        <div class="outliner">
+        <div class="communityCards">
           <h2>Community Cards</h2>
           <div v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
@@ -61,7 +87,7 @@
         </div>
 
         <!-- You -->
-        <div class="outliner">
+        <div class="player">
           <h2>
             <% this.player_index + 1 %>. You (<% this.account %>)
           </h2>
@@ -70,47 +96,48 @@
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
-      </div>
 
-      <div class="outliner">
-        <h2>
-          <% this.player_index + 1 %>. You (<% this.account %>)
-        </h2>
-        <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
-        </p>
-        <div v-for="card in cards">
-          <img :src="'./assets/img/cards/' + card">
-        </div>
-        <div class="flex items-center justify-between my-4">
-          <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
-            Fold
-          </button>
-          <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
-            Check
-          </button>
-          <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
-            Call (<% highestChip - bettingRoundChips[player_index] %>)
-          </button>
-          <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
-            Raise
-          </button>
-          <input
-            :disabled='!isMyTurn'
-            v-model.trim="raiseAmount"
-            id="raiseAmount"
-            type="text"
-            placeholder="Raise Amount"
-          >
+        <!-- You're buttons -->
+        <div class="controls">
+          <h2>
+            <% this.player_index + 1 %>. You (<% this.account %>)
+          </h2>
+          <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
+          </p>
+          <div v-for="card in cards">
+            <img :src="'./assets/img/cards/' + card">
+          </div>
+          <div class="flex items-center justify-between my-4">
+            <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
+              Fold
+            </button>
+            <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
+              Check
+            </button>
+            <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
+              Call (<% highestChip - bettingRoundChips[player_index] %>)
+            </button>
+            <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
+              Raise
+            </button>
+            <input
+              :disabled='!isMyTurn'
+              v-model.trim="raiseAmount"
+              id="raiseAmount"
+              type="text"
+              placeholder="Raise Amount"
+            >
+          </div>
         </div>
       </div>
       
-      <div v-if="spinner"
-        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
+      <div v-if="spinner" class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
         <div
           class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
           Waiting for transaction...
         </div>
       </div>
+      
       <div v-if="error != null"
         class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
         <div class="p-8">
@@ -125,9 +152,9 @@
           </button>
         </div>
       </div>
+      
     </div>
   </div>
-    
 </template>
 
 <script>
