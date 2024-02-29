@@ -1,7 +1,12 @@
+<style scoped>
+.tableRoom {
+  background: black;
+}
+</style>
+
 <template id="table">
-  <div class="overflow-hidden px-3 py-5 flex flex-col justify-around">
-    <h1 class="text-3xl font-bold tracking-tight text-white">Game Number <% table.totalHands %> - Pot value: <% table.pot
-          %> FISH</h1>
+  <div class="tableRoom">
+    <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
     <ul role="list" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()"
         class="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
