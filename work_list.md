@@ -15,3 +15,9 @@ Two Players A and B
 ...
 ()()() => Blockchain
 
+* Presentation
+* Choose a Speaker
+* Choose a Driver
+* 3 Challenges that We Faced
+* Listing We are Are After RIGHT
+* 

@@ -1,3 +1,85 @@
+# Bounties we aim for:
+
+## Oasis https://ethdenver2024.devfolio.co/prizes?partner=Oasis+Protocol
+
+3rd place will get at least $3000 1st place can get as much as $6,000. If we get less than three projects, or they're not meeting our criteria, the prize money might change. It could be between $3000 and $9,000
+
+```
+👀 Some example projects
+
+    Gaming: Bring more game logic on-chain using the Sapphire RNG!
+```
+
+## MetaMask SDK bounty (has gone offline?)
+
+```
+ What is Required to Complete this Bounty? Import and integrate the MetaMask SDK for at least 1 platform (JS, React, iOS, Android, or Unity).
+$5,000.00
+```
+
+## XMTP https://ethdenver2024.devfolio.co/prizes?partner=XMTP
+
+* 1st Place gets $2,000.
+* 2nd Place gets $1,000.
+📝
+### Requirements (missing Airstack)
+
+```
+A functioning prototype that allows a user to participate in a token-gated group chat using:
+
+    XMTP's group chat functionality from the XMTP messaging protocol
+    Airstack's API token create token-gating. 
+```
+
+## EthStorage https://ethdenver2024.devfolio.co/prizes?partner=ETHStorage
+
+```
+👀 Some example projects
+
+- Decentralized Web3 Content: Building decentralized web applications ensures that decentralized applications and on-chain data remain accessible without relying on traditional HTTP URL formats.
+
+...
+
+Build a Decentralized On-chain Gaming Using Web3 and EthStorage - Prize(s): $5,000
+```
+
+# Bounties we could have aimed for:
+
+## Fhenix Privacy Chain https://ethdenver2024.devfolio.co/prizes?partner=Fhenix
+
+```
+What we want you to build:
+    On-chain Poker: (Gaming) leveraging FHE to preserve card privacy, then reveal and compare the cards at the end of the round.
+```
+
+## Inco Privacy Chain https://ethdenver2024.devfolio.co/prizes?partner=Inco+Network
+
+```
+​Previous notable projects include:
+
+    ​Fully on-chain mafia game (Website, Github)
+    ​Battleship game (Github)
+    ​Slot Machine within Telegram (Demo, Github)
+```
+
+## Secret Network https://ethdenver2024.devfolio.co/prizes?partner=Secret+Network
+
+* 1st Place gets $2,500.
+* 2nd Place gets $1,500.
+* 3rd Place gets $1,000.
+
+```
+Some examples include:
+
+    A DAO with private voting
+    A game that utilizes Secret VRF for randomness
+    A game that stores some encrypted data in a Secret contract in order to prevent other players from gaining an unfair advantage, such as cards in a poker game
+    A sealed bid NFT auction platform
+    An NFT collection that stores private data in “sister contracts” on Secret, which are only decryptable by the NFT holder
+```
+
+# All Bounties
+
 * Metis - L2 - L2 Dashboard
 * Chronicle - Oracle - Use Oracle in any way
 * Story Protocol - Onchain IP

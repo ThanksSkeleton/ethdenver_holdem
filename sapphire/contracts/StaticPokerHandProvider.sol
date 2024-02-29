@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./PokerHandProvider.sol";
+import "./PokerHandValidation.sol";
 
 contract StaticPokerHandProvider is PokerHandProvider 
 {
@@ -17,32 +18,32 @@ contract StaticPokerHandProvider is PokerHandProvider
     // secretly store the community cards and the player cards, 
     // and broadcast the encrypted player cards 
     function populate_cards(uint table_id, uint handNum, address[] memory players) internal {
-        uint[] memory cards = generateCards(players.length*2 + 5);
-        for (uint player_index = 0; player_index < players.length; player_index++) {
-            uint hole_1_index = player_index * 2; 
-            uint hole_2_index = player_index * 2 + 1; 
+        uint8[] memory cards = generateCards(players.length*2 + 5);
+        for (uint8 player_index = 0; player_index < players.length; player_index++) {
+            uint8 hole_1_index = player_index * 2; 
+            uint8 hole_2_index = player_index * 2 + 1; 
 
-            uint hole_1_card = uint8(cards[hole_1_index]);
-            uint hole_2_card = uint8(cards[hole_2_index]);
+            uint8 hole_1_card = uint8(cards[hole_1_index]);
+            uint8 hole_2_card = uint8(cards[hole_2_index]);
 
             // store the cards secretly on chain
-            playerCards[players[player_index]][table_id][handNum] = PlayerCards(hole_1_card, hole_1_card);
+            playerCards[players[player_index]][table_id][handNum] = PokerHandValidation.PlayerCards(hole_1_card, hole_1_card);
 
             uint salt = salts[players[player_index]][table_id];
 
             bytes memory encrypted_card_1  = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_1_card)));
             bytes memory encrypted_card_2 = abi.encodePacked(keccak256(abi.encodePacked(salt, table_id, handNum, hole_2_card)));
 
-            encryptedPlayerCards[players[player_index]][table_id][handNum] = EncryptedCards(encrypted_card_1, encrypted_card_2);
+            encryptedPlayerCards[players[player_index]][table_id][handNum] = PokerHandValidation.EncryptedCards(encrypted_card_1, encrypted_card_2);
 
             // encrypt and emit the cards back to the player
-            emit EncryptedCardsEvent(players[player_index], table_id, handNum, 
+            emit PokerHandValidation.EncryptedCardsEvent(players[player_index], table_id, handNum, 
                 encrypted_card_1,
                 encrypted_card_2
             );
         }
 
-        communityCards[table_id][handNum] = CommunityCards 
+        communityCards[table_id][handNum] = PokerHandValidation.CommunityCards 
         (
            [ 
                 cards[2 * players.length],
@@ -54,9 +55,9 @@ contract StaticPokerHandProvider is PokerHandProvider
         );
     }
 
-    function generateCards(uint howMany) private pure returns (uint[] memory) {
-        uint[] memory toReturn = new uint[](howMany);
-        uint count = 0;
+    function generateCards(uint howMany) private pure returns (uint8[] memory) {
+        uint8[] memory toReturn = new uint8[](howMany);
+        uint8 count = 0;
         
         //DUMMY
         while (count < howMany) {
@@ -68,7 +69,7 @@ contract StaticPokerHandProvider is PokerHandProvider
     }
 
     function contains(uint[] memory array, uint value, uint arrayLength) private pure returns (bool) {
-        for (uint i = 0; i < arrayLength; i++) {
+        for (uint8 i = 0; i < arrayLength; i++) {
             if (array[i] == value) {
                 return true;
             }
