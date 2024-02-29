@@ -1,5 +1,3 @@
-import join from "./join.vue";
-
 <style scoped>
   .landingTable {
     background-color: #057B03;
@@ -146,14 +144,18 @@ import join from "./join.vue";
             <td><% table.chips %></td>
             <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
               class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-              <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
-                Join Table
-              </a>
+              <button>
+                <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
+                  Join Table
+                </a>
+              </button>
             </td>
             <td v-if="table.chips > 0">
-              <router-link :to="'/table/' + table.index" class="text-indigo-600 hover:text-indigo-900">
-                Go to Table
-              </router-link>
+              <button>
+                <router-link :to="'/table/' + table.index">
+                  Go to Table
+                </router-link>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -204,7 +206,6 @@ import join from "./join.vue";
       </div>
       
     </div>
-      
   </div>
     
 </template>
