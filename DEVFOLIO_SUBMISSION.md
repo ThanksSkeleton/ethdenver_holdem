@@ -42,14 +42,14 @@ TODO
 
 ### Links (To Github, Live Testnet Site)
 * https://github.com/ThanksSkeleton/ethdenver_holdem
-* Link to Site (https://): $ADDRESS
-* Link to Site (web3://): $ADDRESS
+* https://poker.w3q.w3q-g.w3link.io/
+* web3://poker.w3q/
 
 ### Video Demo
 TODO
 
 ### Cover Image ("Glimpse of Your Project To the World")
-TODO
+![Screenshot](./screenshot.png)
 
 ### Pictures (Up to 5)
 TODO 
@@ -72,14 +72,14 @@ Oasis Protocol: Build a Dapp on Oasis Sapphire
 ### Describe Bounties (Textboxes)
 
 #### Oasis Sapphire 
-Our contract is deployed at $ADDRESS on the oasis sapphire testnet.
+Our contract is deployed at 0x89E4934E5549d67CE6d5773433CFf3C50FBD65c3 on the oasis sapphire testnet.
 We are using Sapphire as our execution environment and our source of confidentiality, and using the oasis Sapphire precompile as our source of onchain randomness.
 Our poker contract secretly deals the cards once the last person joins the table, and through the various state transitions of the poker state machine, values are revealed by being moved into public mappings. 
 (Personally secret cards aka hole cards are made public in a hashed form which can be de-hashed (brute forced) on client side.)
 
 #### EthStorage
-We are deployed our site at $ADDRESS on the EthStorage Testnet
-We have registered web3 URI $ADDRESS and it points to our dapp.
+We are deployed our site at w3q-g:0x7B9A7428d780E2b3fC893f9aab8c98A34358F2Fd on the EthStorage Testnet
+We have registered web3 URI https://poker.w3q.w3q-g.w3link.io/ and it points to our dapp.
 
 #### Metamask SDK 
 We are using the Metamask SDK (web) to provide a wallet connection to our dapp.
