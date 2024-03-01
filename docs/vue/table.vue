@@ -28,7 +28,7 @@
     font-size: 42px;
     font-weight: 100;
     margin: 20px 200px;
-    border-bottom: 1px solid #ffc909;
+    border-bottom: 1px solid #fff;
   }
   .tableHeader p {
     display: block;
@@ -56,39 +56,52 @@
     height: 100px;
   }
 
-  .opponent {
-    width: 300px;
+  .opponent, .player {
+    width: 200px;
     height: 200px;
-    overflow: scroll;
-    border: 1px solid green;
-  }
-  .opponent img {
-    width: 100px;
-    height: 100px;
   }
   .opponent div {
+  }
+  
+  .card {
+    text-align: center;
     display: inline-block;
   }
-  .opponent div img {
-    width: 80px;
+  .card img {
+    width: 70px;
+    z-index: -4;
+    margin: 4px;
+    border-radius: 8px;
   }
 
-  .player {
-    width: 500px;
-    height: 220px;
-    overflow: scroll;
+  .cover {
+    background-color: #041f01;
+    border-radius: 8px;
+    padding: 6px;
+    z-index: 8;
+    height: 50px;
+    margin-top: -70px;
+    position: absolute;
   }
-  .player div {
+  .cover img {
+    height: 48px;  
+    border-radius: 6px;
+  }
+  .cover p {
     display: inline-block;
   }
-  .player div img {
-    width: 80px;
-  }
+
+  <!-- .player div { -->
+  <!--   display: inline-block; -->
+  <!-- } -->
+  <!-- .player div img { -->
+  <!--   width: 80px; -->
+  <!-- } -->
 
   .controls {
-    width: 500px;
-    height: 300px;
-    overflow: scroll;
+    width: 480px;
+    height: 90px;
+    margin-bottom: 400px;
   }
   .controls div {
     display: inline-block;
@@ -114,44 +127,49 @@
           v-for="(player, i) in players"
           v-if="player.toLowerCase() != account.toLowerCase()"
         >
-          <h6>
-            <% i + 1 %>. <% player %>
-          </h6>
-          <p>Admin</p>
-          <p>Chips Bet: <% bettingRoundChips[i] %></p>
-          <img :src="'https://effigy.im/a/' + player + '.png'">
-          <div v-for="card in cards">
+          <div class="card" v-for="card in cards">
             <img :src="'./assets/img/cards/eth_back.png'">
+          </div>
+          <div class ="cover">
+            <img :src="'https://effigy.im/a/' + player + '.png'">
+            <p>
+              <% i + 1 %>. <% player %>
+              </br>
+              Bet <% bettingRoundChips[i] %> Fish
+            </p>
           </div>
         </div>
 
         <!-- Community Cards -->
         <div class="communityCards">
           <h3>Community Cards</h3>
-          <div v-for="card in communityCards">
+          <div class="card" v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
 
         <!-- You. player -->
         <div class="player">
-          <h5>
-            <% this.player_index + 1 %>. You (<% this.account %>)
-          </h5>
-          <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
-          <div v-for="card in cards">
+          <div class="card" v-for="card in cards">
             <img :src="'./assets/img/cards/' + card + '.png'">
+          </div>
+          <div class ="cover">
+            <p>
+              <% this.player_index + 1 %>. You (<% this.account %>)
+              </br>
+              Bet: <% bettingRoundChips[this.player_index] %>
+            </p>
           </div>
         </div>
 
       <div class="controls">
-        <h5>
-          <% this.player_index + 1 %>. You (<% this.account %>)
-        </h5>
-        <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
-        <div v-for="card in cards">
-          <img :src="'./assets/img/cards/' + card + '.png'">
-        </div>
+        <!-- <h5> -->
+        <!--   <% this.player_index + 1 %>. You (<% this.account %>) -->
+        <!-- </h5> -->
+        <!-- <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p> -->
+        <!-- <div class="card" v-for="card in cards"> -->
+        <!--   <img :src="'./assets/img/cards/' + card + '.png'"> -->
+        <!-- </div> -->
         <div class="flex items-center justify-between my-4">
           <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
             Fold
@@ -194,6 +212,17 @@
 </template>
 
 <script>
+
+  var filter = function(text, length, clamp){
+    clamp = clamp || '...';
+    var node = document.createElement('div');
+    node.innerHTML = text;
+    var content = node.textContent;
+    return content.length > length ? content.slice(0, length) + clamp : content;
+};
+
+Vue.filter('truncate', filter);
+
 var TableComponent = Vue.component("Table", {
   template: document.getElementById("table").innerHTML,
   delimiters: ["<%", "%>"],
