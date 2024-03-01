@@ -53,7 +53,7 @@
         </ul>
 
         <div style="color: white;" id="xmtpMsg">
-          Messager here: <% xmtpMsg %>
+          <% xmtpMsg %>
         </div>
 
         <!-- Community Cards -->
