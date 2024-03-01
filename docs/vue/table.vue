@@ -1,23 +1,59 @@
 <style scoped>
   .wrapper {
     height: 100%;
+    background-color: black;
   }
 
   .tableRoom {
     width: 100%;
-    padding-top: 400px;
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
     background-image: url('../assets/img/poker_table.jpg');
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+  }
+
+  .tableHeader {
+    width: 100%;
+    text-align: center;
+  }
+  .tableHeader h4 {
+    display: block;
+    color: white;
+    font-size: 42px;
+    font-weight: 100;
+    margin: 20px 200px;
+    border-bottom: 1px solid #ffc909;
+  }
+  .tableHeader p {
+    display: block;
+    text-align: center;
   }
 
   .rapper {
     padding-bottom: 200px;;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  }
+  
+  h3, h5 {
+    border: none;
+    color: white;
+  }
+
+  .communityCards {
+    width: 500px;
+    height: 120px;
+    overflow: scroll;
+  }
+  .communityCards div {
+    display: inline-block; 
+  }
+  .communityCards div img {
+    height: 100px;
   }
 
   .opponent {
@@ -30,36 +66,35 @@
     width: 100px;
     height: 100px;
   }
+  .opponent div {
+    display: inline-block;
+  }
   .opponent div img {
     width: 80px;
   }
 
-  .communityCards {
-    width: 500px;
-    height: 120px;
-    overflow: scroll;
-  }
-  h3, h5 {
-    border: none;
-    color: white;
-  }
-  .communityCards div {
-    display: inline-block; 
-  }
-  .communityCards div img {
-    height: 100px;
-  }
-
   .player {
     width: 500px;
-    height: 200px;
+    height: 220px;
     overflow: scroll;
+  }
+  .player div {
+    display: inline-block;
+  }
+  .player div img {
+    width: 80px;
   }
 
   .controls {
     width: 500px;
-    height: 200px;
+    height: 300px;
     overflow: scroll;
+  }
+  .controls div {
+    display: inline-block;
+  }
+  .controls div img {
+    width: 80px;
   }
   
 </style>
@@ -68,9 +103,12 @@
   <div class="wrapper">
     <div class="rapper">
       <div class="tableRoom">
-        <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
+        <div class="tableHeader">
+          <h4>Table #<% table.totalHands %></h4>  
+          <p>Pot Size: <% table.pot%> FISH</p>
+        </div>
 
-        <!-- Player -->
+        <!-- opponent -->
         <div
           class="opponent"
           v-for="(player, i) in players"
@@ -95,7 +133,7 @@
           </div>
         </div>
 
-        <!-- You -->
+        <!-- You. player -->
         <div class="player">
           <h5>
             <% this.player_index + 1 %>. You (<% this.account %>)
@@ -106,12 +144,11 @@
           </div>
         </div>
 
-      <div class="outliner">
+      <div class="controls">
         <h5>
           <% this.player_index + 1 %>. You (<% this.account %>)
         </h5>
-        <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
-        </p>
+        <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
         <div v-for="card in cards">
           <img :src="'./assets/img/cards/' + card + '.png'">
         </div>
@@ -137,29 +174,21 @@
           >
         </div>
       </div>
-      
-      <div v-if="spinner" class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-        <div
-          class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
-          Waiting for transaction...
-        </div>
+
+      <div v-if="spinner" class="spinner">
+        Waiting for transaction...
       </div>
-      
-      <div v-if="error != null"
-        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-        <div class="p-8">
-          <h1 class="text-2xl font-bold text-red-500">Error</h1>
-          <p class="text-lg text-red-500">
-            <% error %>
-          </p>
-          <button v-on:click="error = null"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="button">
-            Close
-          </button>
-        </div>
+
+      <div v-if="error != null" class="">
+        <h1>Error</h1>
+        <p class="text-lg text-red-500">
+          <% error %>
+        </p>
+        <button v-on:click="error = null">
+          Close
+        </button>
       </div>
-      
+
     </div>
   </div>
 </template>

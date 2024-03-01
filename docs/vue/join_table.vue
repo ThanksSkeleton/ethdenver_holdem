@@ -71,13 +71,10 @@ var JoinTableComponent = Vue.component("join_table", {
     };
   },
   created: async function () {
-    console.log("join_table created")
     await Init(this);
-    console.log("join_table created done: ", this.contract)
   },
   methods: {
     create_game: async function () {
-      console.log("join_table create_game", this.contract);
       await TryTx(this.$parent, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
   },
