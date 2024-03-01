@@ -1,5 +1,32 @@
 var xmtpClient;
 var conversations;
+let keys;
+// import { loadKeys, storeKeys } from "./helpers";
+
+// this doesn't work due to our vue project structure and the weird way we were forced into doing imports.
+// async function initClientWithKeyStorage() {
+//   xmtpClient = await xmtp.Client;
+//   keys = loadKeys(Account);
+//   console.log(keys);
+//   if (!keys) {
+//     const provider = new ethers.BrowserProvider(window.ethereum);
+//     const signer = await provider.getSigner();
+//     keys = await xmtpClient.getKeys(signer, {
+//       ...clientOptions,
+//       // we don't need to publish the contact here since it
+//       // will happen when we create the client later
+//       skipContactPublishing: true,
+//       // we can skip persistence on the keystore for this short-lived
+//       // instance
+//       persistConversations: false,
+//     });
+//     storeKeys(Account, keys);
+//   }
+//   const client = await xmtpClient.create(null, {
+//     ...clientOptions,
+//     privateKeyOverride: keys,
+//   });
+// }
 async function initClient() {
   if (!xmtpClient) { // check for xmtp too?
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -9,7 +36,6 @@ async function initClient() {
   } else {
     console.log("XMTP Client already initialized");
   }
-  return xmtpClient;
 }
 
 async function listenForMessages() {

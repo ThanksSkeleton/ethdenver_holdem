@@ -131,8 +131,7 @@
 </template>
 
 <script>
-var xmtpClient;
-var conversations; // TODO: no clue if this makes sense tbh
+var conversations;
 var TableComponent = Vue.component("Table", {
   template: document.getElementById("table").innerHTML,
   delimiters: ["<%", "%>"],
@@ -182,7 +181,7 @@ var TableComponent = Vue.component("Table", {
       }
 
       await this.update();
-      xmtpClient = await initClient();
+      await initClient();
       conversations = await initConversations(this.players);
       console.log('before broadcast')
       await broadcastHand(conversations, 0, 5)
