@@ -143,7 +143,7 @@
           <div class ="cover">
             <img :src="'https://effigy.im/a/' + player + '.png'">
             <p>
-              Player: ...<% this.player.substring(this.player.length - 7) %>
+              Player: ...<% player.substring(player.length - 7) %>
               </br>
               Bet: <% bettingRoundChips[i] %> Fish
               </br>
