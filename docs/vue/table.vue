@@ -205,8 +205,9 @@
         </div>
       </div>
 
-      <div v-if="spinner" class="spinner">
-        Waiting for transaction...
+      <div v-if="spinner != false" class="spinner">
+        <div class="lds-circle"><div></div></div>
+        <% spinner %>
       </div>
 
       <div v-if="error != null" class="">
@@ -382,7 +383,7 @@ var TableComponent = Vue.component("Table", {
     playHand: async function (action, raiseAmount) {
       console.log('playHand');
       // let tx = await this.contract.playHand(this.table_index, action, raiseAmount);
-      let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
+      let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount], "Submiting turn");
       console.log('playHand', ret);
     },
   },

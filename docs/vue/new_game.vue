@@ -254,12 +254,9 @@ button {
             </p>
 
 
-            <div v-if="spinner"
-              class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-              <div
-                class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
-                Waiting for transaction...
-              </div>
+            <div v-if="spinner != false" class="spinner">
+              <div class="lds-circle"><div></div></div>
+              <% spinner %>
             </div>
 
             <div v-if="error != null"
@@ -352,9 +349,9 @@ var NewGameComponent = Vue.component("NewGame", {
       try {
         let allowance = await this.token.allowance(this.account, POKER);
         if (allowance < table.buyInAmount) {
-          await TryTx(this, this.token.approve, [POKER, MaxUint256]);
+          await TryTx(this, this.token.approve, [POKER, MaxUint256], "Allowing the Poker contract to use your FISH tokens");
         }
-        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
+        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt], "Joining the table on-chain");
         console.log('join_game', ret);
         router.push({ path: '/table/' + num });
       } catch (e) {
@@ -366,7 +363,7 @@ var NewGameComponent = Vue.component("NewGame", {
         this.error = 'Player name is required';
         return;
       }
-      await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)]);
+      await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)], "Minting you some FISH");
     }
   },
 });
