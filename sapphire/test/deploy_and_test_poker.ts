@@ -297,7 +297,6 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       let hand_type = BigInt(shs[1]);
 
       let showdownHand : PHV.ShowdownHandStruct = {
-        playerAddress: address, // Example Ethereum address
         h: BigInt(hand_type), // BigNumberish can be a string for large numbers
         cardIndexes: [
           BigInt(shs[2][0]),

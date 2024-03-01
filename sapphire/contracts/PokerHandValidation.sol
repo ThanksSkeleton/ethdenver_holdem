@@ -99,12 +99,18 @@ library PokerHandValidation {
         StraightFlush  // Five cards in sequence, all of the same suit
     }
 
-    struct ShowdownHand 
+    struct ShowdownHand
     {
-        address playerAddress;
         uint h;
         // Remember that the user has to present these in canonical order
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
+    }
+
+    struct ShowdownHand_Internal
+    {
+        address playerAddress;
+        uint h;
+        uint8[5] actualCards; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
     }
 
     function hand_valid(uint handTypeInput, uint8[5] memory cards) public pure returns (bool) 
@@ -138,20 +144,20 @@ library PokerHandValidation {
         }
     }
 
-    function DetermineWinners(ShowdownHand[] memory allhands) public pure returns (address[] memory) {
+    function DetermineWinners(ShowdownHand_Internal[] memory allhands) public pure returns (address[] memory) {
         // rank hands by HandType, then by internal cards (by the specific rule for that handtype)
         
-        ShowdownHand[] memory bestHandsByType = BestHandTypes(allhands); // Corrected variable declaration
-        if (bestHandsByType.length == 1) { // Corrected conditional syntax
+        ShowdownHand_Internal[] memory winners_by_type = BestHandTypes(allhands); // Corrected variable declaration
+        if (winners_by_type.length == 1) { // Corrected conditional syntax
             address[] memory winners = new address[](1); // Correct way to initialize an array with a single address
-            winners[0] = bestHandsByType[0].playerAddress; // Assuming .player is the correct field name for the address
+            winners[0] = winners_by_type[0].playerAddress; // Assuming .player is the correct field name for the address
             return winners;
         } 
         
-        return BestHand_SameTypes(bestHandsByType); 
+        return find_winners_same_hand_poker(winners_by_type); 
     }
 	
-    function BestHandTypes(ShowdownHand[] memory allhands) public pure returns (ShowdownHand[] memory) {
+    function BestHandTypes(ShowdownHand_Internal[] memory allhands) public pure returns (ShowdownHand_Internal[] memory) {
         HandType highestHandType = HandType.HighCard; // Start with the lowest possible value
         uint count = 0;
 
@@ -166,7 +172,7 @@ library PokerHandValidation {
         }
 
         // Then, collect all hands of that HandType
-        ShowdownHand[] memory bestHands = new ShowdownHand[](count);
+        ShowdownHand_Internal[] memory bestHands = new ShowdownHand_Internal[](count);
         uint index = 0;
         for (uint i = 0; i < allhands.length; i++) {
             if (HandType(allhands[i].h) == highestHandType) {
@@ -178,17 +184,8 @@ library PokerHandValidation {
         return bestHands;
     }
 
-    function BestHand_SameTypes(ShowdownHand[] memory contender_hands) public pure returns (address[] memory) {
-        // TODO: We need to compare multiple hands of the same type.
-        // for now just select the first player as a single winner
-
-        address[] memory winner = new address[](1); // Create a new dynamic array with 1 address element
-        winner[0] = contender_hands[0].playerAddress; // Assign the first hand's player address to the first element of the winner array
-        return winner; // Return the array containing the address
-    }
-
-    function find_winners_poker(uint8 handTypeInput, address[] memory players, uint8[5][] memory hands) public pure returns (address[] memory) {
-        HandType handType = HandType(handTypeInput);
+    function find_winners_same_hand_poker(ShowdownHand_Internal[] memory contender_hands) public pure returns (address[] memory) {
+        HandType handType = HandType(contender_hands[0].h);
         uint[] memory relevantIndexes;
 
         // Determine relevantIndexes based on handType
@@ -212,21 +209,21 @@ library PokerHandValidation {
         }
 
         // Call find_winners with the determined relevantIndexes
-        return find_winners(players, hands, relevantIndexes);
+        return find_winners(contender_hands, relevantIndexes);
     }
 
     // Implementing the find_winners function based on provided specification
-    function find_winners(address[] memory players, uint8[5][] memory hands, uint[] memory relevantIndexes) public pure returns (address[] memory) {
-        bool[] memory isWinner = new bool[](players.length);
-        for (uint i = 0; i < players.length; i++) {
+    function find_winners(ShowdownHand_Internal[] memory contender_hands, uint[] memory relevantIndexes) public pure returns (address[] memory) {
+        bool[] memory isWinner = new bool[](contender_hands.length);
+        for (uint i = 0; i < contender_hands.length; i++) {
             isWinner[i] = true; // Initialize all players as potential winners
         }
 
         for (uint i = 0; i < relevantIndexes.length; i++) {
             uint highestRank = 0;
-            for (uint j = 0; j < players.length; j++) {
+            for (uint j = 0; j < contender_hands.length; j++) {
                 if (isWinner[j]) { // Only consider players still in contention
-                    uint8 rank = getRank(hands[j][relevantIndexes[i]]);
+                    uint8 rank = getRank(contender_hands[j].actualCards[relevantIndexes[i]]);
                     if (rank > highestRank) {
                         highestRank = rank;
                     }
@@ -234,8 +231,8 @@ library PokerHandValidation {
             }
 
             // Eliminate players who do not have the highest rank at the current index
-            for (uint j = 0; j < players.length; j++) {
-                if (isWinner[j] && getRank(hands[j][relevantIndexes[i]]) < highestRank) {
+            for (uint j = 0; j < contender_hands.length; j++) {
+                if (isWinner[j] && getRank(contender_hands[j].actualCards[relevantIndexes[i]]) < highestRank) {
                     isWinner[j] = false;
                 }
             }
@@ -243,7 +240,7 @@ library PokerHandValidation {
 
         // Count winners to allocate memory for the return array
         uint winnersCount = 0;
-        for (uint i = 0; i < players.length; i++) {
+        for (uint i = 0; i < contender_hands.length; i++) {
             if (isWinner[i]) {
                 winnersCount++;
             }
@@ -252,9 +249,9 @@ library PokerHandValidation {
         // Collect winner addresses
         address[] memory winners = new address[](winnersCount);
         uint winnerIndex = 0;
-        for (uint i = 0; i < players.length; i++) {
+        for (uint i = 0; i < contender_hands.length; i++) {
             if (isWinner[i]) {
-                winners[winnerIndex] = players[i];
+                winners[winnerIndex] = contender_hands[i].playerAddress;
                 winnerIndex++;
             }
         }
