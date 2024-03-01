@@ -18,10 +18,20 @@
 Texas Hide-em
 
 ### Tagline
-On Chain Texas Hold-em Poker, Fully Decentralized 
+No Frontend, No Backend, Just poker-on-chain
 
 ### What Problem it Solves (Markdown Supported)
-TODO
+(Please add your own sound effects when you read this)
+
+Howdy, Partner. "Texas Hide-Em" our brand-new, fully decentralized poker platform for onchain poker enthusiasts.
+
+By leveraging the Oasis Sapphire chain for confidentiality and randomness on the contract side, and hosting the dapp webpage directly on ethstorage, we present a poker dapp that has neither centralized frontend, nor a centralized backend, only a fully decentralized contract. (Whip Sound Effect)
+
+If you have been playing online poker regularly, you can remember the scandals with Absolute Poker or Ultimate Bet, where cheating superusers could view other player's cards. Our solution eradicates the superuser dilemma with confidential computing, keeping all cards provably secret until the showdown. (Good Bad and Ugly Theme Riff)
+
+This is not just poker; it's the future of online gaming, combining privacy, security, and fairness for all players.
+
+Welcome to "Texas Hide-Em," Hide-em high at the mile high city, Denver, Yeeeeeehaw.
 
 ### Challenges We Solved (Markdown Supported) (Challenges, Hurdles, or Specific Bugs and how we overcame them)
 * Migration between frontend build systems / frontend challenges - Cultivated Flexibility and Powered through
