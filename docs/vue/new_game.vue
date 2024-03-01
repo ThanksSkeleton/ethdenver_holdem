@@ -1,5 +1,4 @@
 <style scoped>
-
   .wrapper {
     height: 100%;
   }
@@ -154,52 +153,51 @@
     </p>
 
       <h2>Open Tables</h2>
-    <table>
-      <thead>
-        <tr>
-            <th scope="col">Table</th>
-            <th scope="col">Buy In</th>
-            <th scope="col">Pot Size</th>
-            <th scope="col">Players</th>
-            <th scope="col">Big Blind</th>
-            <th scope="col">
-            <span class="sr-only">Edit</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="table in tables">
-          <td><% table.index %></td>
-          <td><% table.state %></td>
-          <td><% table.totalHands %> </td>
-          <td><% table.currentRound %></td>
-          <td><% table.buyInAmount %></td>
-          <td><% table.players.length %> / <% table.maxPlayers %></td>
-          <td><% table.pot %></td>
-          <td><% table.bigBlind %></td>
-          <td><% table.chips %></td>
-          <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
-            class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-              <button>
-            <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
-              Join Table
-            </a>
-              </button>
-          </td>
-          <td v-if="table.chips > 0">
-              <button>
-                <router-link :to="'/table/' + table.index">
-              Go to Table
-            </router-link>
-              </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <table>
+        <thead>
+          <tr>
+              <th scope="col">Table</th>
+              <th scope="col">Buy In</th>
+              <th scope="col">Pot Size</th>
+              <th scope="col">Players</th>
+              <th scope="col">Big Blind</th>
+              <th scope="col">
+              <span class="sr-only">Edit</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="table in tables">
+            <td><% table.index %></td>
+            <td><% table.state %></td>
+            <td><% table.totalHands %> </td>
+            <td><% table.currentRound %></td>
+            <td><% table.buyInAmount %></td>
+            <td><% table.players.length %> / <% table.maxPlayers %></td>
+            <td><% table.pot %></td>
+            <td><% table.bigBlind %></td>
+            <td><% table.chips %></td>
+            <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
+              class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                <button>
+              <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
+                Join Table
+              </a>
+                </button>
+            </td>
+            <td v-if="table.chips > 0">
+                <button>
+                  <router-link :to="'/table/' + table.index">
+                Go to Table
+              </router-link>
+                </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
 
       <h2>New Game</h2>
-      
       <join_table></join_table>
 
       <h3>About</h3>
@@ -265,21 +263,14 @@ var NewGameComponent = Vue.component("NewGame", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-      
-      this.token = await TokenContract(this.provider);
+      await Init(this);
+
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
       });
-      this.secure_contract = await SecretPokerContract(this.provider);
-
       await this.update();
     } catch (e) {
       console.log('create ERR', e);
@@ -307,10 +298,6 @@ var NewGameComponent = Vue.component("NewGame", {
       } catch (e) {
         console.log('create ERR', e);
       }
-    },
-    create_game: async function () {
-      console.log("create_game");
-      await TryTx(this, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
     },
     join_game: async function (num) {
       console.log("join_game", num);

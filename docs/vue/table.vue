@@ -18,7 +18,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 4px solid blue;
   }
 
   .opponent {
@@ -37,8 +36,18 @@
 
   .communityCards {
     width: 500px;
-    height: 200px;
+    height: 120px;
     overflow: scroll;
+  }
+  h3, h5 {
+    border: none;
+    color: white;
+  }
+  .communityCards div {
+    display: inline-block; 
+  }
+  .communityCards div img {
+    height: 100px;
   }
 
   .player {
@@ -80,7 +89,7 @@
 
         <!-- Community Cards -->
         <div class="communityCards">
-          <h2>Community Cards</h2>
+          <h3>Community Cards</h3>
           <div v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
@@ -88,46 +97,44 @@
 
         <!-- You -->
         <div class="player">
-          <h2>
+          <h5>
             <% this.player_index + 1 %>. You (<% this.account %>)
-          </h2>
+          </h5>
           <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
           <div v-for="card in cards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
 
-        <!-- You're buttons -->
-        <div class="controls">
-          <h2>
-            <% this.player_index + 1 %>. You (<% this.account %>)
-          </h2>
-          <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
-          </p>
-          <div v-for="card in cards">
-            <img :src="'./assets/img/cards/' + card">
-          </div>
-          <div class="flex items-center justify-between my-4">
-            <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
-              Fold
-            </button>
-            <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
-              Check
-            </button>
-            <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
-              Call (<% highestChip - bettingRoundChips[player_index] %>)
-            </button>
-            <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
-              Raise
-            </button>
-            <input
-              :disabled='!isMyTurn'
-              v-model.trim="raiseAmount"
-              id="raiseAmount"
-              type="text"
-              placeholder="Raise Amount"
-            >
-          </div>
+      <div class="outliner">
+        <h5>
+          <% this.player_index + 1 %>. You (<% this.account %>)
+        </h5>
+        <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
+        </p>
+        <div v-for="card in cards">
+          <img :src="'./assets/img/cards/' + card + '.png'">
+        </div>
+        <div class="flex items-center justify-between my-4">
+          <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
+            Fold
+          </button>
+          <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
+            Check
+          </button>
+          <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
+            Call (<% highestChip - bettingRoundChips[player_index] %>)
+          </button>
+          <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
+            Raise
+          </button>
+          <input
+            :disabled='!isMyTurn'
+            v-model.trim="raiseAmount"
+            id="raiseAmount"
+            type="text"
+            placeholder="Raise Amount"
+          >
         </div>
       </div>
       
@@ -191,15 +198,9 @@ var TableComponent = Vue.component("Table", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-
-      this.token = await TokenContract(this.provider);
+      await Init(this);
       this.balance = await this.token.balanceOf(this.account);
-      this.contract = await PokerContract(this.provider);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
@@ -210,7 +211,6 @@ var TableComponent = Vue.component("Table", {
           this.update();
         }, 10000);
       }
-
 
       await this.update();
 

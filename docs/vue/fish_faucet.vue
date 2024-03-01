@@ -32,15 +32,8 @@ var FishFaucetComponent = Vue.component("FishFaucet", {
     };
   },
   created: async function () {
-    console.log("created");
     try {
-      let { provider, account } = await Init();
-      this.account = account;
-      this.provider = provider;
-
-      this.address = this.account;
-      await AddChain(provider);
-      this.token = await TokenContract(provider);
+      await Init(this);
     } catch (e) {
       console.log('create ERR', e);
     }
