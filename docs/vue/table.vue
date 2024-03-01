@@ -143,7 +143,7 @@
           <div class ="cover">
             <img :src="'https://effigy.im/a/' + player + '.png'">
             <p>
-              Player: ...<% this.player.substring(this.player.length - 7) %>
+              Player: <% player_names[i] %> (<% player.substring(player.length - 7) %>)
               </br>
               Bet: <% bettingRoundChips[i] %> Fish
               </br>
@@ -167,7 +167,7 @@
           </div>
           <div class ="cover">
             <p>
-              You: ...<% this.account.substring(this.account.length - 7) %>
+              You: <% player_names[this.player_index] %>
               </br>
               Bet: <% bettingRoundChips[this.player_index] %>
             </p>
@@ -255,6 +255,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
+      player_names: [null, null, null, null, null, null, null, null, null, null, null, null],
       cards: ["eth_back", "eth_back"],
       ActionCall: 0,
       ActionRaise: 1,
@@ -310,22 +311,29 @@ var TableComponent = Vue.component("Table", {
           console.log('player', i, this.players[i], this.account);
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
-            break;
+          }
+          if (this.player_names[i] == null) {
+            let name = await this.token.players(this.players[i]);
+            if (name != '') {
+              this.player_names[i] = ethers.toUtf8String(name);
+            }
           }
         }
         
-        let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
-        if (salt == null) {
-          this.error = 'salt is null';
-          this.updating = false;
-          return;
-        }
-        this.cards = [];
-        for (let i = 0; i < cards.length; i++) {
-          let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
-          card = this.numToCard(card);
-          this.cards.push(card);
+        if (this.cards[0] == "eth_back") {
+          let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+          let salt = await GenerateSalt(this.provider, this.account, this.table_index);
+          if (salt == null) {
+            this.error = 'salt is null';
+            this.updating = false;
+            return;
+          }
+          this.cards = [];
+          for (let i = 0; i < cards.length; i++) {
+            let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+            card = this.numToCard(card);
+            this.cards.push(card);
+          }
         }
 
         let { turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
@@ -343,22 +351,20 @@ var TableComponent = Vue.component("Table", {
         }
         console.log('bettingRoundChips', this.bettingRoundChips);
 
-        let communityCards = [];
         let valid = true;
+        let l = this.communityCards.length;
         while (valid) {
-          let card = await this.contract.revealedCommunityCards(this.table_index, this.table.totalHands, communityCards.length);
+          let card = await this.contract.revealedCommunityCards(this.table_index, this.table.totalHands, this.communityCards.length);
           valid = card.valid;
           if (valid) {
-            communityCards.push(this.numToCard(Number(card.card)));
+            this.communityCards.push(this.numToCard(Number(card.card)));
           }
         };
-        this.communityCards = communityCards;
 
-        if (this.communityCards.length > 0) {
+        if (this.communityCards.length > l) {
           let hand = Hand.solve(this.cards.concat(this.communityCards));
-          console.log('hand', hand);
+          console.log('best hand', hand);
         }
-
       } catch (e) {
         console.log('create ERR', e);
       }
