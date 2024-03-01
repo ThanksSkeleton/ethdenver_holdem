@@ -50,17 +50,10 @@ h1 {
   font-family: "Alfa Slab One", serif;
   font-weight: 400;
   font-style: normal;
-  font-size: 44px;
+  font-size: 52px;
   color: #ffc909;
   -webkit-text-stroke: 2px #ab8134;
   text-shadow: 2px 2px 6px black;
-}
-
-.alfa-slab one-regular {
-
-  font-family: "Alfa Slab One", serif;
-  font-weight: 400;
-  font-style: normal;
 }
 
 h2 {
@@ -88,6 +81,7 @@ h3 {
   font-size: 20px;
   letter-spacing: .1rem;
   margin: 20px;
+  color: #ffc909;
 }
 
 h3::before,
@@ -103,19 +97,21 @@ h4::after {
 p {
   color: white;
   text-align: left;
+  font-family: sans-serif;
 }
 
 table {
+  border-top: 1px solid yellow;
+  border-bottom: 1px solid yellow;
   width: 100%;
   table-layout: fixed;
   overflow-wrap: break-word;
 }
 
 table thead tr {
-  border-top: 1px solid yellow;
-  border-bottom: 1px solid yellow;
   margin: 24px;
-  padding: 8px;
+  padding: 4px;
+  border-bottom: 1px solid yellow;
 }
 
 th {
@@ -125,6 +121,10 @@ th {
   font-style: normal;
   font-size: 14px;
   padding: 8px;
+}
+table tbody {
+  font-family: sans-serif;
+  color: #fff;
 }
 
 button {
@@ -250,7 +250,7 @@ button {
 
             <h3>Who would do such a thing?</h3>
             <p>
-              The Decentralized Dealers, that's who...
+              The Decentralized Dealers, a bunch of degen decentralized dudes that like building private, dapps.
             </p>
 
 

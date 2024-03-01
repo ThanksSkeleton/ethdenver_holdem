@@ -65,7 +65,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
     // player => tableId to requestLeave bool
     mapping(address  => mapping(uint => bool)) public requestLeave;
     // player => tableId => handId => ShowdownHand
-    mapping(address => mapping(uint => mapping(uint => PokerHandValidation.ShowdownHand))) public showdownHands;
+    mapping(address => mapping(uint => mapping(uint => PokerHandValidation.ShowdownHand_Internal))) public showdownHands;
 
     constructor() Ownable(msg.sender) 
     {
@@ -314,13 +314,19 @@ contract Poker is Ownable, StaticPokerHandProvider {
                 availableCards[showdownHand.cardIndexes[4]]
             ];
 
+        PokerHandValidation.ShowdownHand_Internal memory internalHand = PokerHandValidation.ShowdownHand_Internal({
+            h: showdownHand.h,
+            playerAddress: msg.sender, 
+            actualCards: actualCards
+        });
+
         // Validate hand
-        require(PokerHandValidation.HandRecognize(showdownHand.h, actualCards), "Hand does not match the submitted type");
+        require(PokerHandValidation.hand_valid(internalHand.h, actualCards), "Hand does not match the submitted type");
 
         // Store showdown hand
-        showdownHands[msg.sender][_tableId][_handId] = showdownHand;
+        showdownHands[msg.sender][_tableId][_handId] = internalHand;
         
-        (bool allsubmitted, PokerHandValidation.ShowdownHand[] memory hands) = areAllHandsSubmitted(_tableId, _handId);
+        (bool allsubmitted, PokerHandValidation.ShowdownHand_Internal[] memory hands) = areAllHandsSubmitted(_tableId, _handId);
 
         // Check if all hands submitted and trigger Showdown if so
         if (allsubmitted) {
@@ -345,7 +351,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         ]; // Example return statement
     }
 
-    function areAllHandsSubmitted(uint _tableId, uint _handId) private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand[] memory filteredShowdownHands) {
+    function areAllHandsSubmitted(uint _tableId, uint _handId) private view returns (bool allHandsSubmitted, PokerHandValidation.ShowdownHand_Internal[] memory filteredShowdownHands) {
         
         PokerHandValidation.Table storage table = tables[_tableId];
         PokerHandValidation.BettingRoundInfo storage bettingRoundInfo = bettingRounds[_tableId][PokerHandValidation.BettingRound.AfterRiver];
@@ -372,7 +378,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         }
 
         // If all hands are submitted, proceed to construct the array of filtered showdown hands
-        filteredShowdownHands = new PokerHandValidation.ShowdownHand[](nonFoldedCount);
+        filteredShowdownHands = new PokerHandValidation.ShowdownHand_Internal[](nonFoldedCount);
         uint index = 0;
         for (uint i = 0; i < table.players.length; i++) {
             if (!bettingRoundInfo.has_folded[i]) {
@@ -386,11 +392,8 @@ contract Poker is Ownable, StaticPokerHandProvider {
         return (true, filteredShowdownHands);
     }
 
-    function StartShowdown(PokerHandValidation.ShowdownHand[] memory hands, uint _tableId) internal 
+    function StartShowdown(PokerHandValidation.ShowdownHand_Internal[] memory hands, uint _tableId) internal 
     {
-        // Trigger showdown process
-        // Placeholder logic
-
         address winner = PokerHandValidation.DetermineWinners(hands)[0];
 
         PokerHandValidation.Table memory _table = tables[_tableId];
@@ -424,9 +427,7 @@ contract Poker is Ownable, StaticPokerHandProvider {
         (pot_right && _bettingRound.highestChip != 0)) // Pot is right and nonzero
         { 
             if (_table.currentBettingRound == PokerHandValidation.BettingRound.AfterRiver) 
-            {
-                // TODO WIRE IN SHOWODOWN
-                
+            {                
                 _table.state = PokerHandValidation.TableState.Showdown;
 
                 emit PokerHandValidation.TableShowdown(_tableId);

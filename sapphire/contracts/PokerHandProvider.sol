@@ -1,6 +1,8 @@
 pragma solidity ^0.8.9;
 
 import "./PokerHandValidation.sol";
+import "hardhat/console.sol";
+
 
 // Utility contract that contains the salts, cards, and mappings (with getters)
 contract PokerHandProvider {
@@ -24,7 +26,12 @@ contract PokerHandProvider {
     // community_index: 0,1,2 = Flop 3 = Fold 4 = River
     function reveal_community_card(uint table_id, uint handNum, uint community_index) internal
     {
+        console.log("Revealing table ", table_id);
+        console.log("Revealing handNum ", handNum);
+        console.log("Revealing community_index ", community_index);
+
         uint8 card_actual = communityCards[table_id][handNum].allcards[community_index];
+        console.log("Actual Card is ", card_actual);
         revealedCommunityCards[table_id][handNum][community_index] = PokerHandValidation.RevealedCommunityCard(card_actual, true);
         emit PokerHandValidation.CommunityCardRevealedEvent(table_id, handNum, community_index, card_actual);
     }

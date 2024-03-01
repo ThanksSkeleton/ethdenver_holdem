@@ -21,7 +21,14 @@
   .tableHeader {
     width: 100%;
     text-align: center;
+    margin-bottom: 54px;
   }
+  .tableHeader h1 {
+    font-size: 26px;
+    padding-left: 40px;
+    text-align: left;
+    margin-bottom: -44px;
+ 4}
   .tableHeader h4 {
     display: block;
     color: white;
@@ -47,7 +54,14 @@
   .communityCards {
     width: 500px;
     height: 120px;
-    overflow: scroll;
+    border: 1px double yellow;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 54px;
+  }
+  .communityCards h5 {
+    margin-top: -20px;
+    color: yellow;
   }
   .communityCards div {
     display: inline-block; 
@@ -56,10 +70,10 @@
     height: 100px;
   }
 
-  .opponent, .player {
-    width: 200px;
-    height: 200px;
-  }
+  <!-- .opponent, .player { -->
+  <!--   width: 200px; -->
+  <!--   height: 200px; -->
+  <!-- } -->
   .opponent div {
   }
   
@@ -68,19 +82,20 @@
     display: inline-block;
   }
   .card img {
-    width: 70px;
+    width: 60px;
     z-index: -4;
-    margin: 4px;
+    margin-left: 8px;
     border-radius: 8px;
   }
 
   .cover {
     background-color: #041f01;
     border-radius: 8px;
-    padding: 6px;
+    padding: 10px;
     z-index: 8;
-    height: 50px;
-    margin-top: -70px;
+    height: 40px;
+    width: 124px;
+    margin-top: -60px;
     position: absolute;
   }
   .cover img {
@@ -89,14 +104,8 @@
   }
   .cover p {
     display: inline-block;
+    margin: 0;
   }
-
-  <!-- .player div { -->
-  <!--   display: inline-block; -->
-  <!-- } -->
-  <!-- .player div img { -->
-  <!--   width: 80px; -->
-  <!-- } -->
 
   .controls {
     width: 480px;
@@ -132,6 +141,7 @@
 
       <div class="tableRoom">
         <div class="tableHeader">
+          <h1>Denver Hide'em</h1>
           <h4>Table #<% table.totalHands %></h4>  
           <p>Pot Size: <% table.pot%> FISH</p>
         </div>
@@ -148,16 +158,18 @@
           <div class="cover">
             <img :src="'https://effigy.im/a/' + player + '.png'">
             <p>
-              <% i + 1 %>. <% player %>
+              Player: <% player_names[i] %> (<% player.substring(player.length - 7) %>)
               </br>
-              Bet <% bettingRoundChips[i] %> Fish
+              Bet: <% bettingRoundChips[i] %> Fish
+              </br>
+              Stack: n Fish
             </p>
           </div>
         </div>
 
         <!-- Community Cards -->
         <div class="communityCards">
-          <h3>Community Cards</h3>
+          <h5>Community Cards</h5>
           <div class="card" v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
@@ -170,7 +182,7 @@
           </div>
           <div class="cover">
             <p>
-              <% this.player_index + 1 %>. You (<% this.account %>)
+              You: <% player_names[this.player_index] %>
               </br>
               Bet: <% bettingRoundChips[this.player_index] %>
             </p>
@@ -259,6 +271,7 @@ var TableComponent = Vue.component("Table", {
       balance: "0",
       table: "loading",
       players: [],
+      player_names: [null, null, null, null, null, null, null, null, null, null, null, null],
       cards: ["eth_back", "eth_back"],
       ActionCall: 0,
       ActionRaise: 1,
@@ -317,22 +330,29 @@ var TableComponent = Vue.component("Table", {
           console.log('player', i, this.players[i], this.account);
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
-            break;
+          }
+          if (this.player_names[i] == null) {
+            let name = await this.token.players(this.players[i]);
+            if (name != '') {
+              this.player_names[i] = ethers.toUtf8String(name);
+            }
           }
         }
         
-        let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
-        if (salt == null) {
-          this.error = 'salt is null';
-          this.updating = false;
-          return;
-        }
-        this.cards = [];
-        for (let i = 0; i < cards.length; i++) {
-          let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
-          card = this.numToCard(card);
-          this.cards.push(card);
+        if (this.cards[0] == "eth_back") {
+          let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+          let salt = await GenerateSalt(this.provider, this.account, this.table_index);
+          if (salt == null) {
+            this.error = 'salt is null';
+            this.updating = false;
+            return;
+          }
+          this.cards = [];
+          for (let i = 0; i < cards.length; i++) {
+            let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+            card = this.numToCard(card);
+            this.cards.push(card);
+          }
         }
 
         let { turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
@@ -350,22 +370,20 @@ var TableComponent = Vue.component("Table", {
         }
         console.log('bettingRoundChips', this.bettingRoundChips);
 
-        let communityCards = [];
         let valid = true;
+        let l = this.communityCards.length;
         while (valid) {
-          let card = await this.contract.revealedCommunityCards(this.table_index, this.table.totalHands, communityCards.length);
+          let card = await this.contract.revealedCommunityCards(this.table_index, this.table.totalHands, this.communityCards.length);
           valid = card.valid;
           if (valid) {
-            communityCards.push(this.numToCard(Number(card.card)));
+            this.communityCards.push(this.numToCard(Number(card.card)));
           }
         };
-        this.communityCards = communityCards;
 
-        if (this.communityCards.length > 0) {
+        if (this.communityCards.length > l) {
           let hand = Hand.solve(this.cards.concat(this.communityCards));
-          console.log('hand', hand);
+          console.log('best hand', hand);
         }
-
       } catch (e) {
         console.log('create ERR', e);
       }

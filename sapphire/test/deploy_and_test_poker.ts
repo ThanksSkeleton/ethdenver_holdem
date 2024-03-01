@@ -12,10 +12,12 @@ import { ethers } from "hardhat";
 // import { BigNumber } from "ethers"; // Assuming you're using ethers.js or a similar library
 import { Poker, PokerHandValidation as PHV, } from "../typechain-types/contracts/Poker";
 import { PokerToken } from "../typechain-types/contracts/PokerToken"
+import { PokerHandValidation as CORE_PHV } from "../typechain-types/contracts/PokerHandValidation";
 import { ContractFactory, Contract, Signer } from "ethers";
 const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
 
 import chaiAsPromised = require("chai-as-promised");
+import { PokerHandValidation } from "../typechain-types/contracts/PokerHandValidation";
 
 chai.use(chaiAsPromised);
 chai.config.includeStack = true;
@@ -94,7 +96,10 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
 
   async function buildMyCards(player: Signer, salt: number, hand: number): Promise<Number[]> {
     let hole_cards = await get_hole_cards_from_encrypted(player, salt, hand); // Destructure the result of bar into bar0 and bar1
-    
+    console.log("hole Cards: " + hole_cards)
+    console.log("hole Cards 0: " + hole_cards[0])
+    console.log("hole Cards 1: " + hole_cards[1])
+
     const inputs = [0, 1, 2, 3, 4];
     const promiseArray = inputs.map(value => poker.revealedCommunityCards(TABLE_ID, hand, value)); // Create an array of promises
     const tuples = await Promise.all(promiseArray); // Wait for all promises to resolve to tuples
@@ -125,7 +130,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     four_player_game_players = [player1, player2, player3, player4]
 
     let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-    let lib = await factoryLib.deploy() as Contract;
+    let lib = await factoryLib.deploy() as CORE_PHV;
     let lib_deployed = await lib.waitForDeployment();
 
     let factory1 = await ethers.getContractFactory('Poker', {
@@ -136,9 +141,10 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
     poker = await factory1.deploy() as Poker;
     await poker.waitForDeployment();
 
-    let factory2 = await ethers.getContractFactory('PokerToken');
-    poker_token = await factory2.deploy(poker.getAddress()) as PokerToken;
+    let token_factory = await ethers.getContractFactory('PokerToken');
+    poker_token = await token_factory.deploy(poker.getAddress()) as PokerToken;
     await poker_token.waitForDeployment();
+    await poker_token.setPoker(await poker.getAddress(), true)
 
     poker_token.mint(await player1.getAddress(), 1000);
     poker_token.mint(await player2.getAddress(), 1000);
@@ -280,16 +286,17 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
       [player1, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 1 0
       [player2, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 3 2
       [player3, HAND_TYPE_FLUSH, [4,3,2,1,0]], // Flush 10 9 8 4 5
-      [player4, HAND_TYPE_STRAIGHT_FLUSH, [4,3,2,1,0]], // Straight Flush 10 9 8 7 6  - Winner
+      // [player4, HAND_TYPE_STRAIGHT_FLUSH, [4,3,2,1,0]], // Straight Flush 10 9 8 7 6  - Winner
+      [player4, HAND_TYPE_STRAIGHT, [4,3,2,1,0]], // Straight Flush 10 9 8 7 6  - Winner
+
     ]
 
-    for (let shs of showdown_hand_submissions) 
+    for (let [index, shs] of showdown_hand_submissions.entries()) 
     {
       let address = await shs[0].getAddress();
       let hand_type = BigInt(shs[1]);
 
       let showdownHand : PHV.ShowdownHandStruct = {
-        playerAddress: address, // Example Ethereum address
         h: BigInt(hand_type), // BigNumberish can be a string for large numbers
         cardIndexes: [
           BigInt(shs[2][0]),
@@ -300,6 +307,7 @@ describe('Poker Solidity Contract Tests (not including Sapphire Behavior)', () =
         ],
       };
 
+      console.log("Submitting hand for " + index);
       await poker.connect(shs[0]).addShowDownHand(TABLE_ID, hand, showdownHand);
     }
   }

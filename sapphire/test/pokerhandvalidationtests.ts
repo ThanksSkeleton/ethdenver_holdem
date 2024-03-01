@@ -9,7 +9,9 @@ import {
   import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
   import { expect } from "chai";
   import { ethers } from "hardhat";
-  import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
+  import { Poker, PokerHandValidation as PHV, } from "../typechain-types/contracts/Poker";
+  import { PokerToken } from "../typechain-types/contracts/PokerToken"
+  import { PokerHandValidation as CORE_PHV } from "../typechain-types/contracts/PokerHandValidation";
   import { ContractFactory, Contract, Signer } from "ethers";
   const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
   
@@ -20,7 +22,7 @@ import {
   
   describe('Poker Hand Validation Tests', () => {
     let poker : Poker;
-    let lib : PokerHandValidation;
+    let lib : CORE_PHV;
     let poker_token: PokerToken;
   
     let creator : Signer;
@@ -77,9 +79,8 @@ import {
       four_player_game_players = [player1, player2, player3, player4]
   
       let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-      lib = await factoryLib.deploy() as PokerHandValidation;
+      let lib = await factoryLib.deploy() as CORE_PHV;
       let lib_deployed = await lib.waitForDeployment();
-  
   
       let factory1 = await ethers.getContractFactory('Poker', {
         libraries: {
@@ -89,9 +90,10 @@ import {
       poker = await factory1.deploy() as Poker;
       await poker.waitForDeployment();
   
-      let factory2 = await ethers.getContractFactory('PokerToken');
-      poker_token = await factory2.deploy(poker.getAddress()) as PokerToken;
+      let token_factory = await ethers.getContractFactory('PokerToken');
+      poker_token = await token_factory.deploy(poker.getAddress()) as PokerToken;
       await poker_token.waitForDeployment();
+      await poker_token.setPoker(await poker.getAddress(), true)
   
       poker_token.mint(await player1.getAddress(), 1000);
       poker_token.mint(await player2.getAddress(), 1000);
