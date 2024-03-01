@@ -9,7 +9,9 @@ import {
   import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
   import { expect } from "chai";
   import { ethers } from "hardhat";
-  import { Poker, PokerHandValidation, PokerToken } from "../typechain-types/contracts";
+  import { Poker, PokerHandValidation as PHV, } from "../typechain-types/contracts/Poker";
+  import { PokerToken } from "../typechain-types/contracts/PokerToken"
+  import { PokerHandValidation as CORE_PHV } from "../typechain-types/contracts/PokerHandValidation";
   import { ContractFactory, Contract, Signer } from "ethers";
   const { hash_decrypt_card, decrypt_hole_cards } = require('../scripts/decrypt_from_salt.js');
   
@@ -20,7 +22,7 @@ import {
   
   describe('Simple Pure Function Tests', () => {
     let poker : Poker;
-    let lib : PokerHandValidation;
+    let lib : CORE_PHV;
     let poker_token: PokerToken;
   
     let creator : Signer;
@@ -30,6 +32,10 @@ import {
     let player3 : Signer;
     let player4 : Signer;
   
+    let PLAYER_1_ADDRESS: string;
+    let PLAYER_2_ADDRESS: string;
+    let PLAYER_3_ADDRESS: string;
+
     let stranger : Signer;
   
     let two_player_game_players : Signer[];
@@ -72,12 +78,16 @@ import {
       player3 = px3;
       player4 = px4;
       stranger = stx;
-  
+      
+      PLAYER_1_ADDRESS = await player1.getAddress();
+      PLAYER_2_ADDRESS = await player2.getAddress();
+      PLAYER_3_ADDRESS = await player3.getAddress();
+
       two_player_game_players = [player1, player2];
       four_player_game_players = [player1, player2, player3, player4]
   
       let factoryLib = await ethers.getContractFactory('PokerHandValidation');
-      lib = await factoryLib.deploy() as PokerHandValidation;
+      let lib = await factoryLib.deploy() as CORE_PHV;
       let lib_deployed = await lib.waitForDeployment();
   
       let factory1 = await ethers.getContractFactory('Poker', {
@@ -88,9 +98,10 @@ import {
       poker = await factory1.deploy() as Poker;
       await poker.waitForDeployment();
   
-      let factory2 = await ethers.getContractFactory('PokerToken');
-      poker_token = await factory2.deploy(poker.getAddress()) as PokerToken;
+      let token_factory = await ethers.getContractFactory('PokerToken');
+      poker_token = await token_factory.deploy(poker.getAddress()) as PokerToken;
       await poker_token.waitForDeployment();
+      await poker_token.setPoker(await poker.getAddress(), true)
   
       poker_token.mint(await player1.getAddress(), 1000);
       poker_token.mint(await player2.getAddress(), 1000);
@@ -183,4 +194,107 @@ import {
             // Asserting that the function result matches the expected output
             expect(result).to.deep.equal(expectedAddresses);
         });
+
+        it("Should correctly identify a standard straight", async function () {
+          // Standard straight: 10-9-8-7-6 (using the second suit, i.e., adding 13 to each rank)
+          const cards = [9, 8, 7, 6, 5].map(rank => rank + (1 * 13)); // Second suit, for simplicity
+          expect(await lib.is_straight(cards)).to.be.true;
+        });
+      
+        it("Should correctly identify an Ace-to-5 straight", async function () {
+          // Ace-to-5 straight: 5-4-3-2-A (Ace as low, using the second suit)
+          const cards = [3, 2, 1, 0, 12].map(rank => rank + (1 * 13)); // Second suit, for simplicity
+          expect(await lib.is_straight(cards)).to.be.true;
+        });
+      
+        it("Should correctly identify a non-straight hand", async function () {
+          // Non-straight: Mixed hand, descending values (using the second suit)
+          const cards = [11, 9, 7, 5, 3].map(rank => rank + (1 * 13)); // Second suit, for simplicity
+          expect(await lib.is_straight(cards)).to.be.false;
+        });
+
+          // Positive test for One Pair
+  it("should validate a One Pair hand correctly", async function () {
+    const handType = 2; // Assuming One Pair is represented by 2
+    const cards = [0, 13, 3, 4, 6]; // Pair of Twos and other different cards
+    expect(await lib.hand_valid(handType, cards)).to.be.true;
   });
+
+  // Positive test for Two Pair
+  it("should validate a Two Pair hand correctly", async function () {
+    const handType = 3; // Assuming Two Pair is represented by 3
+    const cards = [0, 13, 4, 17, 7]; // Pairs of Twos and Fives
+    expect(await lib.hand_valid(handType, cards)).to.be.true;
+  });
+
+  // Positive test for Three of a Kind
+  it("should validate a Three of a Kind hand correctly", async function () {
+    const handType = 4; // Assuming Three of a Kind is represented by 4
+    const cards = [12, 25, 38, 5, 8]; // Three Aces
+    expect(await lib.hand_valid(handType, cards)).to.be.true;
+  });
+
+  // Positive test for Full House
+  it("should validate a Full House hand correctly", async function () {
+    const handType = 7; // Assuming Full House is represented by 7
+    const cards = [0, 13, 4, 17, 4]; // Full House: Pair of Twos and Three Fives
+    expect(await lib.hand_valid(handType, cards)).to.be.true;
+  });
+
+  // Positive test for Four of a Kind
+  it("should validate a Four of a Kind hand correctly", async function () {
+    const handType = 8; // Assuming Four of a Kind is represented by 8
+    const cards = [12, 25, 38, 51, 3]; // Four Aces
+    expect(await lib.hand_valid(handType, cards)).to.be.true;
+  });
+
+  // Negative test for Full House (actually Two Pair)
+  it("should not validate a Full House when the hand is actually Two Pair", async function () {
+    const handType = 7; // Assuming Full House is represented by 7, but we provide Two Pair
+    const cards = [0, 13, 4, 17, 6]; // Two Pair: Twos and Fives, but not a Full House
+    expect(await lib.hand_valid(handType, cards)).to.be.false;
+  });
+
+  it("A Higher Straight beats a Lower Straight", async function () {
+    const players = [PLAYER_1_ADDRESS, PLAYER_2_ADDRESS]; // Use actual addresses here
+    const hands = [
+      [9, 8, 7, 6, 5], // Higher Straight
+      [8, 7, 6, 5, 4], // Lower Straight
+    ];
+    const handType = 4; // Assuming Straight is represented by 4
+    const winners = await lib.find_winners_poker(handType, players, hands);
+
+    expect(winners).to.have.lengthOf(1);
+    expect(winners[0]).to.equal(players[0]); // Higher Straight wins
+  });
+
+  it("A Higher Full House (10s and 4s) beats a Lower Full House (4s and 10s)", async function () {
+    const players = [PLAYER_1_ADDRESS, PLAYER_2_ADDRESS]; // Use actual addresses here
+    const hands = [
+      [9, 9, 9, 3, 3], // 10s over 4s
+      [3, 3, 3, 9, 9], // 4s over 10s
+    ];
+    const handType = 6; // Assuming FullHouse is represented by 6
+    const winners = await lib.find_winners_poker(handType, players, hands);
+
+    expect(winners).to.have.lengthOf(1);
+    expect(winners[0]).to.equal(players[0]); // Higher Full House wins
+  });
+
+  it("A Pair of the same type is both winners", async function () {
+    const players = [PLAYER_1_ADDRESS, PLAYER_2_ADDRESS, PLAYER_3_ADDRESS]; // Use actual addresses here
+    const expected_winners = [PLAYER_2_ADDRESS, PLAYER_3_ADDRESS]; // Use actual addresses here
+
+    const hands = [
+      [6, 6, 4, 3, 2], // Pair of 7s
+      [7, 7, 4, 3, 2], // Pair of 8s
+      [7, 7, 4, 3, 2], // Pair of 8s, same as Player 1
+    ];
+    const handType = 1; // Assuming OnePair is represented by 1
+    const winners = await lib.find_winners_poker(handType, players, hands);
+
+    expect(winners).to.have.lengthOf(2);
+    expect(winners).to.include.members(expected_winners); // Both are winners
+  });
+
+});

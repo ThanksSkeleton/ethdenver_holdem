@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 // ChatGPT is helping me a lot with this
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 library PokerHandValidation { 
 
@@ -68,6 +69,15 @@ library PokerHandValidation {
         IERC20 token; // the token to be used to play in the table
     }
 
+    struct FullPlayerAction
+    {   
+        address player;
+        uint action;
+        uint raiseAmount;
+        // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
+        uint signature;
+    }
+
     struct BettingRoundInfo {
         uint turn; // an index on the players array, the player who has the current turn
         uint highestChip; // the current highest chip to be called in the round. 
@@ -97,22 +107,35 @@ library PokerHandValidation {
         uint8[5] cardIndexes; // There are 2*player_count + 5 total cards, what are the indexes of the 5 chosen cards. 
     }
 
-    struct FullPlayerAction
-    {   
-        address player;
-        uint action;
-        uint raiseAmount;
-        // TODO - Come up with a cryptographic signature scheme where each element of these actions is valid.
-        uint signature;
-    }
-
-    function HandRecognize(uint handType, uint8[5] memory cards) public pure returns (bool) {
-        // TODO: Implement the logic to verify if the hand matches the handType
-        // Assume It's truthful for now
-        HandType handTypeEnum = HandType(handType);
-
-
-        return true; // Placeholder return statement
+    function hand_valid(uint handTypeInput, uint8[5] memory cards) public pure returns (bool) 
+    {        
+        HandType handType = HandType(handTypeInput);
+        if (handType == HandType.HighCard) {
+            return true; 
+        } else if (handType == HandType.OnePair) {
+            return (getRank(cards[0]) == getRank(cards[1]));
+        } else if (handType == HandType.TwoPair) {
+            return (getRank(cards[0]) == getRank(cards[1])) && (getRank(cards[2]) == getRank(cards[3]));
+        } else if (handType == HandType.ThreeOfAKind) {
+            return (getRank(cards[0]) == getRank(cards[1])) && (getRank(cards[0]) == getRank(cards[2]));
+        } else if (handType == HandType.Straight) {
+            return is_straight(cards);
+        } else if (handType == HandType.Flush) {
+            return is_flush(cards);
+        } else if (handType == HandType.FullHouse) {
+            return (getRank(cards[0]) == getRank(cards[1])) && (getRank(cards[0]) != getRank(cards[2]))
+            && (getRank(cards[3]) == getRank(cards[4]));
+        } else if (handType == HandType.FourOfAKind) {
+            // FourOfAKind logic
+            return (getRank(cards[0]) == getRank(cards[1])) && (getRank(cards[0]) == getRank(cards[2]))
+                   && (getRank(cards[0]) == getRank(cards[3]));
+        } else if (handType == HandType.StraightFlush) {
+            // StraightFlush logic
+            return is_straight(cards) && is_flush(cards);
+        } else {
+            // NoHand or any other undefined behavior
+            return false;
+        }
     }
 
     function DetermineWinners(ShowdownHand[] memory allhands) public pure returns (address[] memory) {
@@ -164,6 +187,81 @@ library PokerHandValidation {
         return winner; // Return the array containing the address
     }
 
+    function find_winners_poker(uint8 handTypeInput, address[] memory players, uint8[5][] memory hands) public pure returns (address[] memory) {
+        HandType handType = HandType(handTypeInput);
+        uint[] memory relevantIndexes;
+
+        // Determine relevantIndexes based on handType
+        if (handType == HandType.HighCard || handType == HandType.OnePair || handType == HandType.ThreeOfAKind ||
+            handType == HandType.Straight || handType == HandType.FourOfAKind || handType == HandType.StraightFlush) {
+            relevantIndexes = new uint[](1);
+            relevantIndexes[0] = 0; // Compare the first index (highest card or significant rank)
+        } else if (handType == HandType.TwoPair) {
+            relevantIndexes = new uint[](2);
+            relevantIndexes[0] = 0; // Compare the higher pair
+            relevantIndexes[1] = 2; // Then the lower pair
+        } else if (handType == HandType.Flush) {
+            relevantIndexes = new uint[](5);
+            for (uint i = 0; i < 5; i++) {
+                relevantIndexes[i] = i; // Compare all cards
+            }
+        } else if (handType == HandType.FullHouse) {
+            relevantIndexes = new uint[](2);
+            relevantIndexes[0] = 0; // Compare the three of a kind
+            relevantIndexes[1] = 3; // Then the pair
+        }
+
+        // Call find_winners with the determined relevantIndexes
+        return find_winners(players, hands, relevantIndexes);
+    }
+
+    // Implementing the find_winners function based on provided specification
+    function find_winners(address[] memory players, uint8[5][] memory hands, uint[] memory relevantIndexes) public pure returns (address[] memory) {
+        bool[] memory isWinner = new bool[](players.length);
+        for (uint i = 0; i < players.length; i++) {
+            isWinner[i] = true; // Initialize all players as potential winners
+        }
+
+        for (uint i = 0; i < relevantIndexes.length; i++) {
+            uint highestRank = 0;
+            for (uint j = 0; j < players.length; j++) {
+                if (isWinner[j]) { // Only consider players still in contention
+                    uint8 rank = getRank(hands[j][relevantIndexes[i]]);
+                    if (rank > highestRank) {
+                        highestRank = rank;
+                    }
+                }
+            }
+
+            // Eliminate players who do not have the highest rank at the current index
+            for (uint j = 0; j < players.length; j++) {
+                if (isWinner[j] && getRank(hands[j][relevantIndexes[i]]) < highestRank) {
+                    isWinner[j] = false;
+                }
+            }
+        }
+
+        // Count winners to allocate memory for the return array
+        uint winnersCount = 0;
+        for (uint i = 0; i < players.length; i++) {
+            if (isWinner[i]) {
+                winnersCount++;
+            }
+        }
+
+        // Collect winner addresses
+        address[] memory winners = new address[](winnersCount);
+        uint winnerIndex = 0;
+        for (uint i = 0; i < players.length; i++) {
+            if (isWinner[i]) {
+                winners[winnerIndex] = players[i];
+                winnerIndex++;
+            }
+        }
+
+        return winners;
+    }
+
     // Rank Represenation
 
     // Ace 0
@@ -194,39 +292,51 @@ library PokerHandValidation {
     // And the Ten of Diamonds is 22 (13 * 1 + 9) 
 
     // Helper method to extract the suit of a card
-    function getSuit(uint card) internal pure returns (uint) {
+    function getSuit(uint8 card) public pure returns (uint8) {
         return card / 13;
     }
 
     // Helper method to extract the rank of a card
-    function getRank(uint card) internal pure returns (uint) {
+    function getRank(uint8 card) public pure returns (uint8) {
         return card % 13;
     }
 
-    // Method to check if all cards in an array have the same rank
-    function same_rank(uint[] memory cards) public pure returns (bool) {
-        if (cards.length <= 1) return true;
-        
-        uint rank = getRank(cards[0]);
-        for (uint i = 1; i < cards.length; i++) {
-            if (getRank(cards[i]) != rank) {
-                return false;
-            }
-        }
-        return true;
+    // Method to check if all cards in an array have the same suit
+    function is_flush(uint8[5] memory cards) public pure returns (bool) {
+
+        console.log("card0:", cards[0]);
+        console.log("card1:", cards[1]);
+        console.log("card2:", cards[2]);
+        console.log("card3:", cards[3]);
+        console.log("card4:", cards[4]);
+
+        uint suit = getSuit(cards[0]); 
+        return getSuit(cards[1]) == suit && getSuit(cards[2]) == suit && getSuit(cards[3]) == suit && getSuit(cards[4]) == suit;
     }
 
-    // Method to check if all cards in an array have the same suit
-    function same_suit(uint[] memory cards) public pure returns (bool) {
-        if (cards.length <= 1) return true;
+    function is_straight(uint8[5] memory cards) public pure returns (bool) 
+    {
+        console.log("card0:", cards[0]);
+        console.log("card1:", cards[1]);
+        console.log("card2:", cards[2]);
+        console.log("card3:", cards[3]);
+        console.log("card4:", cards[4]);
 
-        uint suit = getSuit(cards[0]);
-        for (uint i = 1; i < cards.length; i++) {
-            if (getSuit(cards[i]) != suit) {
-                return false;
-            }
-        }
-        return true;
+        // Check for a regular straight
+        bool isRegularStraight = getRank(cards[0]) - 1 == getRank(cards[1]) &&
+                                 getRank(cards[1]) - 1 == getRank(cards[2]) &&
+                                 getRank(cards[2]) - 1 == getRank(cards[3]) &&
+                                 getRank(cards[3]) > 0 && // Handle underflow - if card #4 is a 2, this is not a normal straight anyway
+                                 getRank(cards[3]) - 1 == getRank(cards[4]);
+        
+        // Check for the special case of a 5-high straight: 5 (3), 4 (2), 3 (1), 2 (0), Ace (12)
+        bool isAceToFiveStraight = getRank(cards[0]) == 3 && 
+                                   getRank(cards[1]) == 2 && 
+                                   getRank(cards[2]) == 1 && 
+                                   getRank(cards[3]) == 0 && 
+                                   getRank(cards[4]) == 12;
+
+        return isRegularStraight || isAceToFiveStraight;
     }
 
         // Method to check if all non-folded players have the same amount of chips

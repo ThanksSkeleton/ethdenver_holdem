@@ -27,7 +27,7 @@ contract StaticPokerHandProvider is PokerHandProvider
             uint8 hole_2_card = uint8(cards[hole_2_index]);
 
             // store the cards secretly on chain
-            playerCards[players[player_index]][table_id][handNum] = PokerHandValidation.PlayerCards(hole_1_card, hole_1_card);
+            playerCards[players[player_index]][table_id][handNum] = PokerHandValidation.PlayerCards(hole_1_card, hole_2_card);
 
             uint salt = salts[players[player_index]][table_id];
 
