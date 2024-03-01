@@ -1,18 +1,17 @@
 # DEVFOLIO SUBMISSION
 
 ## Internal Notes
-* This is a draft of what we should actually submit
-* Need Images:
-** Cover Image
-** Up To 5 Pictures
-** Logo
-* Need Addresses:
-** EthStorage http address
-** EthStorage web3 address
-** Sapphire Testnet Contract Address
+* Draft In Progress
+* Need Blurb
+* Cover Image (Optional)
+* Up To 5 Pictures (Optional)
+* Logo (Optional)
+* EthStorage http address
+* EthStorage web3 address
+* Sapphire Testnet Contract Address
 * Needs polish
-** XMTP
-** EthStorage 
+* XMTP
+* EthStorage 
 
 ## Actual Submission 
 ### Project Name
@@ -22,7 +21,7 @@ Texas Hide-em
 On Chain Texas Hold-em Poker, Fully Decentralized 
 
 ### What Problem it Solves (Markdown Supported)
-Blurb
+TODO
 
 ### Challenges We Solved (Markdown Supported) (Challenges, Hurdles, or Specific Bugs and how we overcame them)
 * Migration between frontend build systems / frontend challenges - Cultivated Flexibility and Powered through
