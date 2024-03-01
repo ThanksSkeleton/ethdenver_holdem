@@ -315,6 +315,10 @@ var TableComponent = Vue.component("Table", {
       if (this.updating) return;
       this.updating = true;
       console.log("update");
+      if (this.players.length - 1 < conversations.length) {
+        console.log('update logic working');
+        initConversations(this.players);
+      }
       try {
         this.chips = await this.contract.chips(this.account, this.table_index);
         let table = await this.contract.tables(this.table_index);
