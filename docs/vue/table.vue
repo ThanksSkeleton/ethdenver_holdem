@@ -21,7 +21,14 @@
   .tableHeader {
     width: 100%;
     text-align: center;
+    margin-bottom: 54px;
   }
+  .tableHeader h1 {
+    font-size: 26px;
+    padding-left: 40px;
+    text-align: left;
+    margin-bottom: -44px;
+ 4}
   .tableHeader h4 {
     display: block;
     color: white;
@@ -47,7 +54,14 @@
   .communityCards {
     width: 500px;
     height: 120px;
-    overflow: scroll;
+    border: 1px double yellow;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 54px;
+  }
+  .communityCards h5 {
+    margin-top: -20px;
+    color: yellow;
   }
   .communityCards div {
     display: inline-block; 
@@ -56,10 +70,10 @@
     height: 100px;
   }
 
-  .opponent, .player {
-    width: 200px;
-    height: 200px;
-  }
+  <!-- .opponent, .player { -->
+  <!--   width: 200px; -->
+  <!--   height: 200px; -->
+  <!-- } -->
   .opponent div {
   }
   
@@ -68,19 +82,20 @@
     display: inline-block;
   }
   .card img {
-    width: 70px;
+    width: 60px;
     z-index: -4;
-    margin: 4px;
+    margin-left: 8px;
     border-radius: 8px;
   }
 
   .cover {
     background-color: #041f01;
     border-radius: 8px;
-    padding: 6px;
+    padding: 10px;
     z-index: 8;
-    height: 50px;
-    margin-top: -70px;
+    height: 40px;
+    width: 124px;
+    margin-top: -60px;
     position: absolute;
   }
   .cover img {
@@ -89,14 +104,8 @@
   }
   .cover p {
     display: inline-block;
+    margin: 0;
   }
-
-  <!-- .player div { -->
-  <!--   display: inline-block; -->
-  <!-- } -->
-  <!-- .player div img { -->
-  <!--   width: 80px; -->
-  <!-- } -->
 
   .controls {
     width: 480px;
@@ -117,6 +126,7 @@
     <div class="rapper">
       <div class="tableRoom">
         <div class="tableHeader">
+          <h1>Denver Hide'em</h1>
           <h4>Table #<% table.totalHands %></h4>  
           <p>Pot Size: <% table.pot%> FISH</p>
         </div>
@@ -133,16 +143,18 @@
           <div class ="cover">
             <img :src="'https://effigy.im/a/' + player + '.png'">
             <p>
-              <% i + 1 %>. <% player %>
+              Player: ...<% this.player.substring(this.player.length - 7) %>
               </br>
-              Bet <% bettingRoundChips[i] %> Fish
+              Bet: <% bettingRoundChips[i] %> Fish
+              </br>
+              Stack: n Fish
             </p>
           </div>
         </div>
 
         <!-- Community Cards -->
         <div class="communityCards">
-          <h3>Community Cards</h3>
+          <h5>Community Cards</h5>
           <div class="card" v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
@@ -155,7 +167,7 @@
           </div>
           <div class ="cover">
             <p>
-              <% this.player_index + 1 %>. You (<% this.account %>)
+              You: ...<% this.account.substring(this.account.length - 7) %>
               </br>
               Bet: <% bettingRoundChips[this.player_index] %>
             </p>
