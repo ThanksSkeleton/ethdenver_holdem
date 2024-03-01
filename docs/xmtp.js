@@ -4,6 +4,7 @@ let keys;
 // import { loadKeys, storeKeys } from "./helpers";
 
 // this doesn't work due to our vue project structure and the weird way we were forced into doing imports.
+
 // async function initClientWithKeyStorage() {
 //   xmtpClient = await xmtp.Client;
 //   keys = loadKeys(Account);
@@ -28,7 +29,7 @@ let keys;
 //   });
 // }
 async function initClient() {
-  if (!xmtpClient) { // check for xmtp too?
+  if (!xmtpClient) {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     xmtpClient = await xmtp.Client.create(signer, { env: "dev" }); // Create a new XMTP client instance
@@ -42,10 +43,14 @@ async function listenForMessages() {
   console.log('listening to messages');
   for await (const message of await xmtpClient.conversations.streamAllMessages()) {
     if (message.senderAddress === xmtpClient.address) {
+      console.log('dont listen to yourself');
       // This message was sent from me
       continue;
     }
+    console.log('listening in for loop')
     console.log(message.content);
+    console.log(this.xmtpMsg);
+    this.xmtpMsg += message.content;
   }
 }
 async function initConversations(players) {
@@ -90,14 +95,17 @@ const PLAYER_ACTIONS_MAP = {
 
 async function broadcastHand(conversations, action, raiseAmount) {
   // await xmtpClient.contacts.refreshConsentList();
-  conversations.forEach(async convo => {
-    let message = `${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} `
+  const messages = await Promise.all(conversations.map(async (convo) => {
+    let message = `${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} `;
     // not check nor fold
     if (action !== 2 && action !== 3) {
-      message += raiseAmount
+      message += raiseAmount;
     }
+    console.log('broadcast hand in for loop');
     console.log(message);
     await convo.send(message);
     return message;
-  });
+  }));
+
+  return messages;
 }

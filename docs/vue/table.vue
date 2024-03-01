@@ -1,90 +1,190 @@
 <style scoped>
   .wrapper {
     height: 100%;
+    background-color: black;
   }
 
   .tableRoom {
     width: 100%;
-    padding-top: 400px;
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
     background-image: url('../assets/img/poker_table.jpg');
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+  }
+
+  .tableHeader {
+    width: 100%;
+    text-align: center;
+  }
+  .tableHeader h4 {
+    display: block;
+    color: white;
+    font-size: 42px;
+    font-weight: 100;
+    margin: 20px 200px;
+    border-bottom: 1px solid #fff;
+  }
+  .tableHeader p {
+    display: block;
+    text-align: center;
   }
 
   .rapper {
     padding-bottom: 200px;;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  }
+  
+  h3, h5 {
+    border: none;
+    color: white;
   }
 
-  .outliner {
-    border: 1px solid red;
+  .communityCards {
     width: 500px;
-    height: 200px;
-    overflow: hidden;
+    height: 120px;
+    overflow: scroll;
+  }
+  .communityCards div {
+    display: inline-block; 
+  }
+  .communityCards div img {
+    height: 100px;
   }
 
-  ul {
+  .opponent, .player {
+    width: 200px;
+    height: 200px;
+  }
+  .opponent div {
+  }
+  
+  .card {
+    text-align: center;
+    display: inline-block;
+  }
+  .card img {
+    width: 70px;
+    z-index: -4;
+    margin: 4px;
+    border-radius: 8px;
+  }
+
+  .cover {
+    background-color: #041f01;
+    border-radius: 8px;
+    padding: 6px;
+    z-index: 8;
+    height: 50px;
+    margin-top: -70px;
+    position: absolute;
+  }
+  .cover img {
+    height: 48px;  
+    border-radius: 6px;
+  }
+  .cover p {
+    display: inline-block;
+  }
+
+  <!-- .player div { -->
+  <!--   display: inline-block; -->
+  <!-- } -->
+  <!-- .player div img { -->
+  <!--   width: 80px; -->
+  <!-- } -->
+
+  .controls {
+    width: 480px;
+    height: 90px;
+    margin-bottom: 400px;
+  }
+  .controls div {
+    display: inline-block;
+  }
+  .controls div img {
+    width: 80px;
+  }
+  .xmtpMsgBox {
+    position: fixed;
+    bottom: 0;
+    padding: 10px;
+    border-right: 1px solid white;
+    overflow: scroll;
+    height: 200px;
     width: 200px;
   }
 </style>
 
 <template id="table">
   <div class="wrapper">
+
+      <div class="xmtpMsgBox" style="color: white;" id="xmtpMsg">
+        <% xmtpMsg %> 
+      </div>
+
+ 
     <div class="rapper">
+
       <div class="tableRoom">
-        <p>Game Number <% table.totalHands %> - Pot value: <% table.pot%> FISH</p>
+        <div class="tableHeader">
+          <h4>Table #<% table.totalHands %></h4>  
+          <p>Pot Size: <% table.pot%> FISH</p>
+        </div>
 
-        <!-- Player -->
-        <ul role="list">
-          <li v-for="(player, i) in players" v-if="player.toLowerCase() != account.toLowerCase()">
-            <h6>
-              <% i + 1 %>. <% player %>
-            </h6>
-            <p>Admin</p>
-            <p>Chips Bet: <% bettingRoundChips[i] %></p>
+        <!-- opponent -->
+        <div
+          class="opponent"
+          v-for="(player, i) in players"
+          v-if="player.toLowerCase() != account.toLowerCase()"
+        >
+          <div class="card" v-for="card in cards">
+            <img :src="'./assets/img/cards/eth_back.png'">
+          </div>
+          <div class="cover">
             <img :src="'https://effigy.im/a/' + player + '.png'">
-            <div v-for="card in cards">
-              <img :src="'./assets/img/cards/eth_back.png'">
-          </li>
-        </ul>
-
-        <div style="color: white;" id="xmtpMsg">
-          <% xmtpMsg %>
+            <p>
+              <% i + 1 %>. <% player %>
+              </br>
+              Bet <% bettingRoundChips[i] %> Fish
+            </p>
+          </div>
         </div>
 
         <!-- Community Cards -->
-        <div class="outliner">
-          <h2>Community Cards</h2>
-          <div v-for="card in communityCards">
+        <div class="communityCards">
+          <h3>Community Cards</h3>
+          <div class="card" v-for="card in communityCards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
         </div>
 
-        <!-- You -->
-        <div class="outliner">
-          <h2>
-            <% this.player_index + 1 %>. You (<% this.account %>)
-          </h2>
-          <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p>
-          <div v-for="card in cards">
+        <!-- You. player -->
+        <div class="player">
+          <div class="card" v-for="card in cards">
             <img :src="'./assets/img/cards/' + card + '.png'">
           </div>
+          <div class="cover">
+            <p>
+              <% this.player_index + 1 %>. You (<% this.account %>)
+              </br>
+              Bet: <% bettingRoundChips[this.player_index] %>
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div class="outliner">
-        <h2>
-          <% this.player_index + 1 %>. You (<% this.account %>)
-        </h2>
-        <p>Chips Bet: <% bettingRoundChips[this.player_index] %>
-        </p>
-        <div v-for="card in cards">
-          <img :src="'./assets/img/cards/' + card + '.png'">
-        </div>
+      <div class="controls">
+        <!-- <h5> -->
+        <!--   <% this.player_index + 1 %>. You (<% this.account %>) -->
+        <!-- </h5> -->
+        <!-- <p>Chips Bet: <% bettingRoundChips[this.player_index] %></p> -->
+        <!-- <div class="card" v-for="card in cards"> -->
+        <!--   <img :src="'./assets/img/cards/' + card + '.png'"> -->
+        <!-- </div> -->
         <div class="flex items-center justify-between my-4">
           <button :disabled='!isMyTurn' v-on:click="playHand(ActionFold, 0)">
             Fold
@@ -107,35 +207,38 @@
           >
         </div>
       </div>
-      
-      <div v-if="spinner"
-        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-        <div
-          class="loader ease-linear rounded-full border-8 border-t-8 h-24 w-64 flex items-center justify-center">
-          Waiting for transaction...
-        </div>
+
+      <div v-if="spinner" class="spinner">
+        Waiting for transaction...
       </div>
-      <div v-if="error != null"
-        class="fixed top-0 left-0 w-full h-full flex items-center justify-center">
-        <div class="p-8">
-          <h1 class="text-2xl font-bold text-red-500">Error</h1>
-          <p class="text-lg text-red-500">
-            <% error %>
-          </p>
-          <button v-on:click="error = null"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="button">
-            Close
-          </button>
-        </div>
+
+      <div v-if="error != null" class="">
+        <h1>Error</h1>
+        <p class="text-lg text-red-500">
+          <% error %>
+        </p>
+        <button v-on:click="error = null">
+          Close
+        </button>
+      </div>
       </div>
     </div>
   </div>
-    
 </template>
 
 <script>
 var conversations;
+
+  var filter = function(text, length, clamp){
+    clamp = clamp || '...';
+    var node = document.createElement('div');
+    node.innerHTML = text;
+    var content = node.textContent;
+    return content.length > length ? content.slice(0, length) + clamp : content;
+};
+
+Vue.filter('truncate', filter);
+
 var TableComponent = Vue.component("Table", {
   template: document.getElementById("table").innerHTML,
   delimiters: ["<%", "%>"],
