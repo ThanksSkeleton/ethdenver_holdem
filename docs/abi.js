@@ -1,5 +1,5 @@
-const POKER = "0xcf78410DdfC51cC30c79c1DdC117F9941343214a";
-const TOKEN = "0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85";
+const POKER = "0x89E4934E5549d67CE6d5773433CFf3C50FBD65c3";
+const TOKEN = "0xBf6D2c2f412FdA3A0dA8650D547254f1e9B6a13c";
 
 var ethers;
 var MaxUint256;
@@ -76,7 +76,7 @@ async function PokerContract(provider) {
         "function tablePlayers(uint256) public view returns (address[])",
         "function tables(uint256) public view returns (tuple(uint8 state, uint256 totalHands, uint256 currentRound, uint256 buyInAmount, uint256 maxPlayers, uint256 pot, uint256 bigBlind, uint256 token))",
         "function totalTables() public view returns (uint256)",
-        "function createTable(uint256 buyInAmount, uint256 maxPlayers, uint256 bigBlind, address token)",
+        "function createTable(uint256 buyInAmount, uint8 maxPlayers, uint256 bigBlind, address token)",
         "function encryptedPlayerCards(address player, uint256 tableId, uint256 hand) public view returns (bytes, bytes)",
         "function bettingRounds(uint256 tableId, uint8 bettingRound) public view returns (tuple(uint256 turn, uint256 highestChip))",
         "function bettingRoundChips(uint256 tableId, uint8 bettingRound) public view returns (uint256[])",
@@ -102,6 +102,8 @@ async function TokenContract(provider) {
     provider = new ethers.BrowserProvider(window.ethereum);
     let abi = [
         "function mint(address, uint256)",
+        "function mintOnce(bytes)",
+        "function players(address) public view returns (bytes)",
         "function balanceOf(address) public view returns (uint256)",
         "function allowance(address owner, address spender) public view returns (uint256)",
         "function approve(address spender, uint256 value) returns (bool)",

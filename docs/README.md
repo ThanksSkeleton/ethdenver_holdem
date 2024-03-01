@@ -21,10 +21,10 @@ https://metadata.ens.domains/docs#/paths/~1%7BnetworkName%7D~1avatar~1%7Bname%7D
 ## Testnet Deployments:
 
 ## Token
-https://testnet.explorer.sapphire.oasis.dev/address/0x7fB79D023Ab907A7d8ea26aBeC637a917a617B85/write-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0xBf6D2c2f412FdA3A0dA8650D547254f1e9B6a13c/write-contract#address-tabs
 
 ## Poker
-https://testnet.explorer.sapphire.oasis.dev/address/0xcf78410DdfC51cC30c79c1DdC117F9941343214a/read-contract#address-tabs
+https://testnet.explorer.sapphire.oasis.dev/address/0x89E4934E5549d67CE6d5773433CFf3C50FBD65c3
 
 ## Wallets
 

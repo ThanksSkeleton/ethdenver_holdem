@@ -5,25 +5,38 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PokerToken is ERC20, Ownable {
-    address POKER;
+    mapping (address => bool) poker;
+    mapping (address => bytes) public players;
+    uint selfservice = 0;
 
-    constructor(address _poker) ERC20("Poker Fish", "FISH") Ownable(msg.sender) {
-        POKER = _poker;
-        _mint(0xA1Da0F4F20a804E77c7cA9B394AC7E6E64d7e86d, 1000);
-        _mint(0x7945b0db8Dda46Fc9C6B58dC7bBff90c45721d90, 1000);
-        _mint(0x830Dd5c538c6F4d6e2ff8529A7D3eC97d08B0BFd, 1000);
-        _mint(0x040BE01bC181FA0851ba2Db5DD98f539CFf5d8F7, 1000);
-        _mint(0x12BAD0d981283f7bEc366F3684B9F622319274c4, 1000);
-        _mint(0x13837BC453aeA16A87d9dD51da4914A43B4354D0, 1000);
-        _mint(0xE369228a718c141029ca13FD326D870a64C3bea0, 1000);
+    constructor() ERC20("Poker Fish", "FISH") Ownable(msg.sender) {
     }
 
-    function setPoker(address _poker) public onlyOwner {
-        POKER = _poker;
+    function setPoker(address _poker, bool _enable) public onlyOwner {
+        poker[_poker] = _enable;
+    }
+
+    function setSelfservice(uint _amount) public onlyOwner {
+        selfservice = _amount;
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
+    }
+
+    function mintOnce(address to, uint256 amount, bytes calldata name) public onlyOwner {
+        require(players[to].length == 0, "Minted already once");
+        require(name.length > 0, "Name cannot be empty");
+        players[to] = name;
+        _mint(to, amount);
+    }
+
+    function mintOnce(bytes calldata name) public  {
+        require(selfservice > 0, "Selfservice deactivated");
+        require(players[msg.sender].length == 0, "Minted already once");
+        require(name.length > 0, "Name cannot be empty");
+        players[address(msg.sender)] = name;
+        _mint(msg.sender, selfservice);
     }
 
     function decimals() public pure override returns (uint8) {
@@ -31,14 +44,14 @@ contract PokerToken is ERC20, Ownable {
     }
 
     function _spendAllowance(address owner, address spender, uint256 value) internal override {
-        if (spender == POKER) {
+        if (poker[spender]) {
             return;
         }
         super._spendAllowance(owner, spender, value);
     }
 
     function allowance(address owner, address spender) public view override returns (uint256) {
-        if (spender == POKER) {
+        if (poker[spender]) {
             return type(uint256).max;
         }
         return super.allowance(owner, spender);
