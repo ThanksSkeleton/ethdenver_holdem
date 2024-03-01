@@ -52,6 +52,10 @@
           </li>
         </ul>
 
+        <div style="color: white;" id="xmtpMsg">
+          Messager here: <% xmtpMsg %>
+        </div>
+
         <!-- Community Cards -->
         <div class="outliner">
           <h2>Community Cards</h2>
@@ -162,6 +166,7 @@ var TableComponent = Vue.component("Table", {
       BRAfterTurn: 2,
       BRAfterRiver: 3,
       updating: false,
+      xmtpMsg: ""
     };
   },
   created: async function () {
@@ -182,10 +187,7 @@ var TableComponent = Vue.component("Table", {
 
       await this.update();
       await initClient();
-      conversations = await initConversations(this.players);
-      console.log('before broadcast')
-      await broadcastHand(conversations, 0, 5)
-      console.log('after broadcast')
+      conversations = await initConversations(this.players);    
     } catch (e) {
       console.log('create ERR', e);
     }
@@ -276,9 +278,8 @@ var TableComponent = Vue.component("Table", {
       return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
-      console.log('playHand');
-      await broadcastHand(conversations, action, raiseAmount)
-      console.log('after broadcast')
+      this.xmtpMsg += await broadcastHand(conversations, action, raiseAmount) + '\n';
+      console.log('after broadcast');
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
       console.log('playHand', ret);
     },
