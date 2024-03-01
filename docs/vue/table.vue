@@ -303,7 +303,9 @@ var TableComponent = Vue.component("Table", {
 
       await this.update();
       await initClient();
-      conversations = await initConversations(this.players);    
+      console.log('creating conversations')
+      conversations = await initConversations(this.players);
+      console.log(conversations);
     } catch (e) {
       console.log('create ERR', e);
     }
@@ -399,7 +401,10 @@ var TableComponent = Vue.component("Table", {
       return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
-      this.xmtpMsg += await broadcastHand(conversations, action, raiseAmount) + '\n';
+      const broadcastResult = await broadcastHand(conversations, action, raiseAmount);
+      console.log('broadcast res');
+      console.log(broadcastResult);
+      this.xmtpMsg += broadcastResult;
       console.log('after broadcast');
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
       console.log('playHand', ret);

@@ -1,5 +1,5 @@
 var xmtpClient;
-var conversations;
+var conversations = [];
 let keys;
 // import { loadKeys, storeKeys } from "./helpers";
 
@@ -54,7 +54,6 @@ async function listenForMessages() {
   }
 }
 async function initConversations(players) {
-    conversations = [];
     console.log('players amount');
     console.log(players);
     for (const player of players) {
@@ -63,9 +62,9 @@ async function initConversations(players) {
             console.log(`${player} skipping his own address of ${xmtpClient.address}`);
             continue;
         }
-          const conversation = await xmtpClient.conversations.newConversation(player);
-          console.log('conversation made');
-          conversations.push(conversation);        
+        const conversation = await xmtpClient.conversations.newConversation(player);
+        console.log(`conversation made with ${player}`);
+        conversations.push(conversation);        
 
 
         // this logic doesn't work because even if a convo exists, I still need to grab it. however the docs say you need at least 1 msg sent to them.
@@ -94,18 +93,18 @@ const PLAYER_ACTIONS_MAP = {
 };
 
 async function broadcastHand(conversations, action, raiseAmount) {
+  console.log('conversations');
+  console.log(conversations);
   // await xmtpClient.contacts.refreshConsentList();
-  const messages = await Promise.all(conversations.map(async (convo) => {
-    let message = `${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} `;
-    // not check nor fold
-    if (action !== 2 && action !== 3) {
-      message += raiseAmount;
-    }
+  let message = `${xmtpClient.address} ${PLAYER_ACTIONS_MAP[action]} `;
+  // not check nor fold
+  if (action !== 2 && action !== 3) {
+    message += raiseAmount;
+  }
+  for (convo in conversations) {
     console.log('broadcast hand in for loop');
     console.log(message);
     await convo.send(message);
-    return message;
-  }));
-
-  return messages;
+  }
+  return message;
 }
