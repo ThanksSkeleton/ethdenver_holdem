@@ -118,7 +118,7 @@
     <div class="rapper">
       <div class="tableRoom">
         <div class="tableHeader">
-          <h1>Denver Hide'em</h1>
+          <h1>Texas Hide'em</h1>
           <h4>Table #<% table.totalHands %></h4>  
           <p>Pot Size: <% table.pot%> FISH</p>
         </div>
