@@ -86,10 +86,13 @@ async function broadcastHand(conversations, action, raiseAmount) {
     message += raiseAmount;
   }
   conversations.map((convo) => {
-    console.log('broadcast hand in for loop');
-    console.log(convo);
-    console.log(message);
     convo.send(message);
   })
   return message;
+}
+
+async function sendChat(msg) {
+  conversations.map((convo) => {
+    convo.send(msg);
+  })
 }
