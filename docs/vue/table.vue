@@ -326,13 +326,13 @@ var TableComponent = Vue.component("Table", {
 
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
-            if (chips != 0 && chips > this.chips[i]) {
-              this.winmsg = 'You won ' + (chips - this.chips[i]) + ' FISH';
+            if (this.chips[i] != 0 && Number(chips) > this.chips[i]) {
+              this.winmsg = 'You won ' + (Number(chips) - this.chips[i]) + ' FISH';
               this.winnerAnimation();
             } 
           }
 
-          this.chips[i] = chips;
+          this.chips[i] = Number(chips);
 
 
           if (this.player_names[i] == null) {
