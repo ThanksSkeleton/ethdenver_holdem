@@ -52,6 +52,7 @@ h1 {
   font-style: normal;
   font-size: 52px;
   color: #ffc909;
+  margin: 10px;
   -webkit-text-stroke: 2px #ab8134;
   text-shadow: 2px 2px 6px black;
 }
@@ -142,6 +143,14 @@ button {
   border-radius: 8px;
   filter: drop-shadow(4px 4px 3px #333);
 }
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+button a {
+  color: #FEE931;
+  text-decoration: none;
+}
 </style>
   
 <template id="new_game">
@@ -150,7 +159,8 @@ button {
       <div class="rapper">
         <div class="landingTable">
           <div class="felt">
-
+            
+            <img :src="'./assets/img/fishChip.png'">
             <h1>Denver Hide'em</h1>
 
             <p v-if="balance != 0" class="balanceBox">
@@ -158,7 +168,7 @@ button {
             </p>
             <div v-if="balance == 0" class="balanceBox">
               <p>
-                You've got NO FISH tokens to play with.
+                You've got NO FISH tokens to play with. 
               </p>
               <form>
                 <label>Player name</label>
@@ -169,6 +179,9 @@ button {
                   Gimme some fish!
                 </button>
               </form>
+              <p>
+                If you don't have gas tokens yet you can get them <a href="https://faucet.testnet.oasis.dev/">here</a>
+              </p>
             </div>
 
             <h2>Open Tables</h2>
@@ -177,7 +190,6 @@ button {
                 <tr>
                   <th scope="col">Table</th>
                   <th scope="col">Buy In</th>
-                  <th scope="col">Pot Size</th>
                   <th scope="col">Players</th>
                   <th scope="col">Big Blind</th>
                   <th scope="col">
@@ -186,18 +198,9 @@ button {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="table in tables">
+                <tr v-for="table in tables" v-if="table.member || (table.players.length < table.maxPlayers)">
                   <td>
                     <% table.index %>
-                  </td>
-                  <td>
-                    <% table.state %>
-                  </td>
-                  <td>
-                    <% table.totalHands %>
-                  </td>
-                  <td>
-                    <% table.currentRound %>
                   </td>
                   <td>
                     <% table.buyInAmount %>
@@ -206,15 +209,9 @@ button {
                     <% table.players.length %> / <% table.maxPlayers %>
                   </td>
                   <td>
-                    <% table.pot %>
-                  </td>
-                  <td>
                     <% table.bigBlind %>
                   </td>
-                  <td>
-                    <% table.chips %>
-                  </td>
-                  <td v-if="table.chips == 0 && table.players.length < table.maxPlayers"
+                  <td v-if="!table.member && table.players.length < table.maxPlayers"
                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                     <button>
                       <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
@@ -222,10 +219,10 @@ button {
                       </a>
                     </button>
                   </td>
-                  <td v-if="table.chips > 0">
+                  <td v-if="table.member">
                     <button>
                       <router-link :to="'/table/' + table.index">
-                        Go to Table
+                        See Table
                       </router-link>
                     </button>
                   </td>
@@ -254,16 +251,13 @@ button {
             </p>
 
 
-            <div v-if="spinner"
-              class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-              <div
-                class="loader ease-linear rounded-full border-8 border-t-8 bg-gray-200 border-gray-200 h-24 w-64 flex items-center justify-center">
-                Waiting for transaction...
-              </div>
+            <div v-if="spinner != false" class="spinner">
+              <div class="lds-circle"><div></div></div>
+              <% spinner %>
             </div>
 
             <div v-if="error != null"
-              class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+              class="error">
               <div class="bg-white p-8 rounded-lg">
                 <h1 class="text-2xl font-bold text-red-500">Error</h1>
                 <p class="text-lg text-red-500">
@@ -307,12 +301,6 @@ var NewGameComponent = Vue.component("NewGame", {
     try {
       await Init(this);
 
-      let player_name = await this.token.players(this.account);
-      if (player_name != '') {
-        this.player_name = ethers.toUtf8String(player_name);
-      }
-
-      this.balance = await this.token.balanceOf(this.account);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
@@ -326,18 +314,33 @@ var NewGameComponent = Vue.component("NewGame", {
     update: async function () {
       console.log("update");
       try {
+        let player_name = await this.token.players(this.account);
+        if (player_name != '') {
+          this.player_name = ethers.toUtf8String(player_name);
+        }
+
+        this.balance = await this.token.balanceOf(this.account);
+
         let totalTables = await this.contract.totalTables();
         let tables = [];
         for (let i = 0; i < totalTables; i++) {
           const table = await this.contract.tables(i);
           const players = await this.contract.tablePlayers(i);
-          let chips = await this.contract.chips(this.account, i);
+
+          let member = false;
+          for (let j = 0; j < players.length; j++) {
+            if (players[j].toLowerCase() == this.account.toLowerCase()) {
+              member = true;
+              break;
+            }
+          }
+
           tables.push({
             index: i, state: table.state,
             totalHands: table.totalHands, currentRound: table.currentRound,
             buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
             bigBlind: table.bigBlind, token: table.token,
-            chips: chips, players: players
+            players: players, member: member
           });
         }
         this.tables = tables;
@@ -352,9 +355,9 @@ var NewGameComponent = Vue.component("NewGame", {
       try {
         let allowance = await this.token.allowance(this.account, POKER);
         if (allowance < table.buyInAmount) {
-          await TryTx(this, this.token.approve, [POKER, MaxUint256]);
+          await TryTx(this, this.token.approve, [POKER, MaxUint256], "Allowing the Poker contract to use your FISH tokens");
         }
-        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt]);
+        let ret = await TryTx(this, this.secure_contract.buyIn, [num, table.buyInAmount, salt], "Joining the table on-chain");
         console.log('join_game', ret);
         router.push({ path: '/table/' + num });
       } catch (e) {
@@ -366,7 +369,12 @@ var NewGameComponent = Vue.component("NewGame", {
         this.error = 'Player name is required';
         return;
       }
-      await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)]);
+      await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)], "Minting you some FISH");
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
     }
   },
 });

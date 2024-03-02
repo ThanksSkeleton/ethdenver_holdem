@@ -75,7 +75,7 @@ var JoinTableComponent = Vue.component("join_table", {
   },
   methods: {
     create_game: async function () {
-      await TryTx(this.$parent, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN]);
+      await TryTx(this.$parent, this.contract.createTable, [this.buy_in, this.player_count, 2, TOKEN], "Game is being created on chain");
     },
   },
 });

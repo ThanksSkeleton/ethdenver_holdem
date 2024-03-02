@@ -28,7 +28,8 @@
     padding-left: 40px;
     text-align: left;
     margin-bottom: -44px;
- 4}
+  }
+  
   .tableHeader h4 {
     display: block;
     color: white;
@@ -52,8 +53,7 @@
   }
 
   .communityCards {
-    width: 500px;
-    height: 120px;
+    height: 100px;
     border: 1px double yellow;
     border-radius: 8px;
     text-align: center;
@@ -70,13 +70,6 @@
     height: 100px;
   }
 
-  <!-- .opponent, .player { -->
-  <!--   width: 200px; -->
-  <!--   height: 200px; -->
-  <!-- } -->
-  .opponent div {
-  }
-  
   .card {
     text-align: center;
     display: inline-block;
@@ -162,7 +155,7 @@
               </br>
               Bet: <% bettingRoundChips[i] %> Fish
               </br>
-              Stack: n Fish
+              Stack: <% chips[i] %> Fish
             </p>
           </div>
         </div>
@@ -182,9 +175,11 @@
           </div>
           <div class="cover">
             <p>
-              You: <% player_names[this.player_index] %>
+              You: <% player_names[player_index] %>
               </br>
-              Bet: <% bettingRoundChips[this.player_index] %>
+              Bet: <% bettingRoundChips[player_index] %>
+              </br>
+              Stack: <% chips[player_index] %> Fish
             </p>
           </div>
         </div>
@@ -220,21 +215,42 @@
         </div>
       </div>
 
-      <div v-if="spinner" class="spinner">
-        Waiting for transaction...
+      <div v-if="spinner != false" class="spinner">
+        <div class="lds-circle"><div></div></div>
+        <% spinner %>
       </div>
 
-      <div v-if="error != null" class="">
-        <h1>Error</h1>
-        <p class="text-lg text-red-500">
-          <% error %>
-        </p>
-        <button v-on:click="error = null">
-          Close
-        </button>
+      <div v-if="error != null"
+        class="error">
+        <div class="bg-white p-8 rounded-lg">
+          <h1 class="text-2xl font-bold text-red-500">Error</h1>
+          <p class="text-lg text-red-500">
+            <% error %>
+          </p>
+          <button v-on:click="error = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
       </div>
+
+      <div v-if="winmsg != null"
+        class="error">
+        <div class="bg-white p-8 rounded-lg">
+          <h1 class="text-2xl font-bold text-red-500">You Won</h1>
+          <p class="text-lg text-red-500">
+            <% winmsg %>
+          </p>
+          <button v-on:click="winmsg = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -257,16 +273,17 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      winmsg: null,
       communityCards: [],
       player_index: 0,
       highestChip: 0,
+      chips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       bettingRoundChips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       isMyTurn: false,
       error: null,
       spinner: false,
       raiseAmount: 0,
       account: "loading",
-      chips: "loading",
       table: "loading",
       balance: "0",
       table: "loading",
@@ -321,23 +338,30 @@ var TableComponent = Vue.component("Table", {
         conversations = await initConversations(this.players); // TODO: sorta don't need to do conversations = 
       }
       try {
-        this.chips = await this.contract.chips(this.account, this.table_index);
         let table = await this.contract.tables(this.table_index);
         this.table = {
           index: i, state: table.state,
           totalHands: table.totalHands, currentRound: table.currentRound,
           buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-          bigBlind: table.bigBlind, token: table.token,
-          chips: this.chips
+          bigBlind: table.bigBlind, token: table.token
         };
         this.players = await this.contract.tablePlayers(this.table_index);
         console.log('players', this.players);
 
         for (let i = 0; i < this.players.length; i++) {
-          console.log('player', i, this.players[i], this.account);
+          let chips = await this.contract.chips(this.players[i], this.table_index);
+
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
+            if (this.chips[i] != 0 && Number(chips) > this.chips[i]) {
+              this.winmsg = 'You won ' + (Number(chips) - this.chips[i]) + ' FISH';
+              this.winnerAnimation();
+            } 
           }
+
+          this.chips[i] = Number(chips);
+
+
           if (this.player_names[i] == null) {
             let name = await this.token.players(this.players[i]);
             if (name != '') {
@@ -346,27 +370,24 @@ var TableComponent = Vue.component("Table", {
           }
         }
         
-        if (this.cards[0] == "eth_back") {
-          let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-          let salt = await GenerateSalt(this.provider, this.account, this.table_index);
-          if (salt == null) {
-            this.error = 'salt is null';
-            this.updating = false;
-            return;
-          }
-          this.cards = [];
-          for (let i = 0; i < cards.length; i++) {
-            let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
-            card = this.numToCard(card);
-            this.cards.push(card);
-          }
+        let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
+        if (salt == null) {
+          this.error = 'salt is null';
+          this.updating = false;
+          return;
+        }
+        this.cards = [];
+        for (let i = 0; i < cards.length; i++) {
+          let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+          card = this.numToCard(card);
+          this.cards.push(card);
         }
 
         let { turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
         console.log("bettingRounds", turn, Number(turn), highestChip)
         this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
         this.highestChip = Number(highestChip);
-        console.log('highestChip', this.highestChip);
         let bettingRoundChips = await this.contract.bettingRoundChips(this.table_index, this.table.currentRound);
         if (bettingRoundChips.length == this.players.length) {
           let newBettingRoundChips = [];
@@ -375,7 +396,6 @@ var TableComponent = Vue.component("Table", {
           }
           this.bettingRoundChips = newBettingRoundChips;
         }
-        console.log('bettingRoundChips', this.bettingRoundChips);
 
         let valid = true;
         let l = this.communityCards.length;
@@ -414,6 +434,37 @@ var TableComponent = Vue.component("Table", {
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount]);
       console.log('playHand', ret);
     },
+    winnerAnimation: async function () {
+      const defaults = {
+        spread: 360,
+        ticks: 50,
+        gravity: 0,
+        decay: 0.94,
+        startVelocity: 30,
+        shapes: ["star"],
+        colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+      };
+
+      let shoot = function() {
+        confetti({
+          ...defaults,
+          particleCount: 40,
+          scalar: 1.2,
+          shapes: ["star"],
+        });
+
+        confetti({
+          ...defaults,
+          particleCount: 10,
+          scalar: 0.75,
+          shapes: ["circle"],
+        });
+      }
+
+      setTimeout(shoot, 0);
+      setTimeout(shoot, 100);
+      setTimeout(shoot, 200);      
+    }
   },
 });
 </script>

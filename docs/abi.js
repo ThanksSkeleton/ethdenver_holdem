@@ -67,7 +67,7 @@ async function GenerateSalt(provider, account, num) {
 }
 
 async function PokerContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function playHand(uint256 tableId, uint8 action, uint256 raiseAmount)",
         "function withdrawChips(uint256 amount, uint256 tableId)",
@@ -89,7 +89,7 @@ async function PokerContract(provider) {
 }
 
 async function SecretPokerContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function buyIn(uint256 tableId, uint256 amount, uint256 salt)",
     ];
@@ -99,7 +99,7 @@ async function SecretPokerContract(provider) {
 }
 
 async function TokenContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function mint(address, uint256)",
         "function mintOnce(bytes)",
@@ -149,12 +149,15 @@ function HashDecryptCard(salt, table_id, handnum, encrypted) {
   return -1; // Indicate that no matching card was found
 }
 
-async function TryTx(component, fun, args) {
+async function TryTx(component, fun, args, msg) {
   let ret;
   try {
     // let simret = await fun.staticCall.apply(fun.staticCallResult, args);
     // console.log('tryTx simret', simret);
-    component.spinner = true;
+    if (msg == null) {
+      msg = "Transaction pending...";
+    }
+    component.spinner = msg;
     let tx = await fun.apply(fun, args);
     console.log('tryTx tx', tx);
     ret = await tx.wait();
