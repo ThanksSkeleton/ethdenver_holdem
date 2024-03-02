@@ -335,7 +335,9 @@ var TableComponent = Vue.component("Table", {
       if (conversations.length < this.players.length - 1 ) {
         console.log('update logic working');
         console.log(this.players);
-        conversations = await initConversations(this.players); // TODO: sorta don't need to do conversations = 
+        conversations = await initConversations(this.players);
+        console.log('updated conversations');
+        console.log(conversations);
       }
       try {
         let table = await this.contract.tables(this.table_index);
@@ -426,6 +428,8 @@ var TableComponent = Vue.component("Table", {
       return values[value] + suits[suit];
     },
     playHand: async function (action, raiseAmount) {
+      console.log('before broadcasthand');
+      console.log(conversations)
       const broadcastResult = await broadcastHand(conversations, action, raiseAmount);
       console.log('broadcast res');
       console.log(broadcastResult);

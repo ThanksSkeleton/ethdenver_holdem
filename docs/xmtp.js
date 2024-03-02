@@ -42,15 +42,15 @@ async function initClient() {
 async function listenForMessages() {
   console.log('listening to messages');
   for await (const message of await xmtpClient.conversations.streamAllMessages()) {
-    if (message.senderAddress === xmtpClient.address) {
-      console.log('dont listen to yourself');
-      // This message was sent from me
-      continue;
-    }
+    // if (message.senderAddress === xmtpClient.address) {
+    //   console.log('dont listen to yourself');
+    //   // This message was sent from me
+    //   continue;
+    // }
     console.log('listening in for loop')
     console.log(message.content);
     console.log(this.xmtpMsg);
-    this.xmtpMsg += message.content;
+    this.xmtpMsg + message.content;
   }
 }
 async function initConversations(players) {
@@ -62,7 +62,9 @@ async function initConversations(players) {
         }
         const conversation = await xmtpClient.conversations.newConversation(player);
         console.log(`conversation made with ${player}`);
-        conversations.push(conversation);        
+        console.log(conversation);
+        conversations.push(conversation);      
+        console.log(conversations); 
     }
     listenForMessages();
     return conversations;
@@ -84,10 +86,11 @@ async function broadcastHand(conversations, action, raiseAmount) {
   if (action !== 2 && action !== 3) {
     message += raiseAmount;
   }
-  for (convo in conversations) {
+  conversations.map((convo) => {
     console.log('broadcast hand in for loop');
+    console.log(convo);
     console.log(message);
-    await convo.send(message);
-  }
+    convo.send(message);
+  })
   return message;
 }
