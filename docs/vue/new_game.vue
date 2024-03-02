@@ -105,8 +105,11 @@ table {
   border-top: 1px solid yellow;
   border-bottom: 1px solid yellow;
   width: 100%;
+  max-height: 300px;
+  overflow: scroll;
   table-layout: fixed;
   overflow-wrap: break-word;
+  border-collapse: collapse;
 }
 
 table thead tr {
@@ -126,6 +129,12 @@ th {
 table tbody {
   font-family: sans-serif;
   color: #fff;
+  background-color: rgba(0,0,0,.1);
+}
+
+td button {
+  margin: 0;
+  padding: 6px 12px;
 }
 
 button {
@@ -142,6 +151,10 @@ button {
   cursor: pointer;
   border-radius: 8px;
   filter: drop-shadow(4px 4px 3px #333);
+  white-space: nowrap;
+}
+button:hover, button a:hover {
+  background-color: green;
 }
 button:disabled {
   background-color: gray;
@@ -161,14 +174,14 @@ button a {
           <div class="felt">
             
             <img :src="'./assets/img/fishChip.png'">
-            <h1>Denver Hide'em</h1>
+            <h1>Texas Hide'em</h1>
 
             <p v-if="balance != 0" class="balanceBox">
-              Hey <b><% player_name %></b> you've got (<b><% balance %></b>) FISH tokens that you can play with on any of the open tables.
+              Hey <b><% player_name %></b> you've got (<b><% balance %></b>) FISH chips that you can play with on any of the open tables.
             </p>
             <div v-if="balance == 0" class="balanceBox">
               <p>
-                You've got NO FISH tokens to play with. 
+                You've got NO FISH chips to play with.
               </p>
               <form>
                 <label>Player name</label>
@@ -193,7 +206,7 @@ button a {
                   <th scope="col">Players</th>
                   <th scope="col">Big Blind</th>
                   <th scope="col">
-                    <span class="sr-only">Edit</span>
+                    <span class="sr-only">Status</span>
                   </th>
                 </tr>
               </thead>
@@ -214,7 +227,7 @@ button a {
                   <td v-if="!table.member && table.players.length < table.maxPlayers"
                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                     <button>
-                      <a v-on:click="join_game(table.index)" href="#" class="text-indigo-600 hover:text-indigo-900">
+                      <a v-on:click="join_game(table.index)" href="#">
                         Join Table
                       </a>
                     </button>
@@ -235,20 +248,35 @@ button a {
 
             <join_table></join_table>
 
+            <img
+              style="width: 180px; margin-top: -54px; margin-left: -334px; margin-bottom: -100px;"
+              :src="'./assets/img/chip_green.png'"
+            >
             <h3>About</h3>
             <p>
-              Denver Hide'em may look like a typical Texas Hold'em online poker game but the difference here is that this
+              Texas Hide'em may look like a typical Texas Hold'em online poker game but the difference here is that this
               online game is truly privacy preserving, decentralized, random shuffled, unstopable game. Also it dosen't
               use "real" money but a token called <b>Fish Chips</b> that players use to bet with...
             </p>
 
+            <img
+              style="width: 220px; margin-top: -54px; margin-right: -334px; margin-bottom: -100px;"
+              :src="'./assets/img/chip_two.png'"
+            >
             <h3>How it works</h3>
-            <p>We're able to achive these great acts of privacy buy leveraging the Oasis chain...</p>
+            <p>
+              The poker contract is deployed on the Oasis Sapphire for confidentiality and randomness in the players cards and EthStorage to the decentralized front end.
+              We also make use of XMTP to enhance the UX with real-time messaging and the Metamask SDK to seamlessly connect mobile users.
+            </p>
 
             <h3>Who would do such a thing?</h3>
             <p>
               The Decentralized Dealers, a bunch of degen decentralized dudes that like building private, dapps.
             </p>
+            <img
+              style="width: 180px; margin-left: -112px; margin-top: -24px; margin-bottom: -80px;"
+              :src="'./assets/img/chip_orange.png'"
+            >
 
 
             <div v-if="spinner != false" class="spinner">

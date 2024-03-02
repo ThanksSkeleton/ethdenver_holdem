@@ -70,6 +70,13 @@
     height: 100px;
   }
 
+  .opponent {
+    display: inline-block;
+    margin: 100px;
+    margin: 0 100px;
+    margin-bottom: 90px;
+  }
+
   .card {
     text-align: center;
     display: inline-block;
@@ -84,20 +91,22 @@
   .cover {
     background-color: #041f01;
     border-radius: 8px;
-    padding: 10px;
+    padding: 2px;
     z-index: 8;
-    height: 40px;
-    width: 124px;
-    margin-top: -60px;
+    min-height: 40px;
+    min-width: 140px;
+    margin-top: -54px;
     position: absolute;
   }
   .cover img {
+    margin: 4px;
     height: 48px;  
     border-radius: 6px;
   }
   .cover p {
     display: inline-block;
-    margin: 0;
+    margin: 4px;
+    font-size: 11px;
   }
 
   .controls {
@@ -134,29 +143,31 @@
 
       <div class="tableRoom">
         <div class="tableHeader">
-          <h1>Denver Hide'em</h1>
+          <h1>Texas Hide'em</h1>
           <h4>Table #<% table.totalHands %></h4>  
           <p>Pot Size: <% table.pot%> FISH</p>
         </div>
 
         <!-- opponent -->
-        <div
-          class="opponent"
-          v-for="(player, i) in players"
-          v-if="player.toLowerCase() != account.toLowerCase()"
-        >
-          <div class="card" v-for="card in cards">
-            <img :src="'./assets/img/cards/eth_back.png'">
-          </div>
-          <div class="cover">
-            <img :src="'https://effigy.im/a/' + player + '.png'">
-            <p>
-              Player: <% player_names[i] %> (<% player.substring(player.length - 7) %>)
-              </br>
-              Bet: <% bettingRoundChips[i] %> Fish
-              </br>
-              Stack: <% chips[i] %> Fish
-            </p>
+        <div class="opponentStuff">
+          <div
+            class="opponent"
+            v-for="(player, i) in players"
+            v-if="player.toLowerCase() != account.toLowerCase()"
+          >
+            <div class="card" v-for="card in cards">
+              <img :src="'./assets/img/cards/eth_back.png'">
+            </div>
+            <div class="cover">
+              <img :src="'https://effigy.im/a/' + player + '.png'">
+              <p>
+                Player: <% player.substring(player.length - 6) %>
+                </br>
+                Bet: <% bettingRoundChips[i] %> Fish
+                </br>
+                Stack: <% chips[i] %> Fish
+              </p>
+            </div>
           </div>
         </div>
 
