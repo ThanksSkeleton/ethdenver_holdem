@@ -240,6 +240,10 @@ button a {
 
             <join_table></join_table>
 
+            <img
+              style="width: 180px; margin-top: -54px; margin-left: -334px; margin-bottom: -100px;"
+              :src="'./assets/img/chip_green.png'"
+            >
             <h3>About</h3>
             <p>
               Texas Hide'em may look like a typical Texas Hold'em online poker game but the difference here is that this
@@ -247,13 +251,24 @@ button a {
               use "real" money but a token called <b>Fish Chips</b> that players use to bet with...
             </p>
 
+            <img
+              style="width: 220px; margin-top: -54px; margin-right: -334px; margin-bottom: -100px;"
+              :src="'./assets/img/chip_two.png'"
+            >
             <h3>How it works</h3>
-            <p>We're able to achive these great acts of privacy buy leveraging the Oasis chain...</p>
+            <p>
+              The poker contract is deployed on the Oasis Sapphire for confidentiality and randomness in the players cards and EthStorage to the decentralized front end.
+              We also make use of XMTP to enhance the UX with real-time messaging and the Metamask SDK to seamlessly connect mobile users.
+            </p>
 
             <h3>Who would do such a thing?</h3>
             <p>
               The Decentralized Dealers, a bunch of degen decentralized dudes that like building private, dapps.
             </p>
+            <img
+              style="width: 180px; margin-left: -74px; margin-top: -54px; margin-bottom: -100px;"
+              :src="'./assets/img/chip_orange.png'"
+            >
 
 
             <div v-if="spinner != false" class="spinner">
