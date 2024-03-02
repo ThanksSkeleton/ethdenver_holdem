@@ -195,7 +195,6 @@ button a {
                 <tr>
                   <th scope="col">Table</th>
                   <th scope="col">Buy In</th>
-                  <th scope="col">Pot Size</th>
                   <th scope="col">Players</th>
                   <th scope="col">Big Blind</th>
                   <th scope="col">
@@ -204,18 +203,9 @@ button a {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="table in tables">
+                <tr v-for="table in tables" v-if="table.member || (table.players.length < table.maxPlayers)">
                   <td>
                     <% table.index %>
-                  </td>
-                  <td>
-                    <% table.state %>
-                  </td>
-                  <td>
-                    <% table.totalHands %>
-                  </td>
-                  <td>
-                    <% table.currentRound %>
                   </td>
                   <td>
                     <% table.buyInAmount %>
@@ -224,25 +214,20 @@ button a {
                     <% table.players.length %> / <% table.maxPlayers %>
                   </td>
                   <td>
-                    <% table.pot %>
-                  </td>
-                  <td>
                     <% table.bigBlind %>
                   </td>
-                  <td>
-                    <% table.chips %>
-                  </td>
-                  <td v-if="table.chips == 0 && table.players.length < table.maxPlayers">
+                  <td v-if="!table.member && table.players.length < table.maxPlayers"
+                    class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                     <button>
                       <a v-on:click="join_game(table.index)" href="#">
                         Join Table
                       </a>
                     </button>
                   </td>
-                  <td v-if="table.chips > 0">
+                  <td v-if="table.member">
                     <button>
                       <router-link :to="'/table/' + table.index">
-                        go to table
+                        See Table
                       </router-link>
                     </button>
                   </td>
@@ -329,11 +314,6 @@ var NewGameComponent = Vue.component("NewGame", {
     } catch (e) {
       console.log('create ERR', e);
     }
-    confetti({
-  particleCount: 100,
-  spread: 70,
-  origin: { y: 0.6 },
-});
   },
   methods: {
     update: async function () {
@@ -351,13 +331,21 @@ var NewGameComponent = Vue.component("NewGame", {
         for (let i = 0; i < totalTables; i++) {
           const table = await this.contract.tables(i);
           const players = await this.contract.tablePlayers(i);
-          let chips = await this.contract.chips(this.account, i);
+
+          let member = false;
+          for (let j = 0; j < players.length; j++) {
+            if (players[j].toLowerCase() == this.account.toLowerCase()) {
+              member = true;
+              break;
+            }
+          }
+
           tables.push({
             index: i, state: table.state,
             totalHands: table.totalHands, currentRound: table.currentRound,
             buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
             bigBlind: table.bigBlind, token: table.token,
-            chips: chips, players: players
+            players: players, member: member
           });
         }
         this.tables = tables;
@@ -387,6 +375,11 @@ var NewGameComponent = Vue.component("NewGame", {
         return;
       }
       await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)], "Minting you some FISH");
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
     }
   },
 });
