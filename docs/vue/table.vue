@@ -28,7 +28,8 @@
     padding-left: 40px;
     text-align: left;
     margin-bottom: -44px;
- 4}
+  }
+  
   .tableHeader h4 {
     display: block;
     color: white;
@@ -139,7 +140,7 @@
               </br>
               Bet: <% bettingRoundChips[i] %> Fish
               </br>
-              Stack: n Fish
+              Stack: <% chips[i] %> Fish
             </p>
           </div>
         </div>
@@ -159,9 +160,11 @@
           </div>
           <div class ="cover">
             <p>
-              You: <% player_names[this.player_index] %>
+              You: <% player_names[player_index] %>
               </br>
-              Bet: <% bettingRoundChips[this.player_index] %>
+              Bet: <% bettingRoundChips[player_index] %>
+              </br>
+              Stack: <% chips[player_index] %> Fish
             </p>
           </div>
         </div>
@@ -202,16 +205,20 @@
         <% spinner %>
       </div>
 
-      <div v-if="error != null" class="">
-        <h1>Error</h1>
-        <p class="text-lg text-red-500">
-          <% error %>
-        </p>
-        <button v-on:click="error = null">
-          Close
-        </button>
+      <div v-if="error != null"
+        class="error">
+        <div class="bg-white p-8 rounded-lg">
+          <h1 class="text-2xl font-bold text-red-500">Error</h1>
+          <p class="text-lg text-red-500">
+            <% error %>
+          </p>
+          <button v-on:click="error = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -237,6 +244,7 @@ var TableComponent = Vue.component("Table", {
       communityCards: [],
       player_index: 0,
       highestChip: 0,
+      chips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       bettingRoundChips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       isMyTurn: false,
       error: null,
@@ -288,14 +296,12 @@ var TableComponent = Vue.component("Table", {
       this.updating = true;
       console.log("update");
       try {
-        this.chips = await this.contract.chips(this.account, this.table_index);
         let table = await this.contract.tables(this.table_index);
         this.table = {
           index: i, state: table.state,
           totalHands: table.totalHands, currentRound: table.currentRound,
           buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-          bigBlind: table.bigBlind, token: table.token,
-          chips: this.chips
+          bigBlind: table.bigBlind, token: table.token
         };
         this.players = await this.contract.tablePlayers(this.table_index);
         console.log('players', this.players);
@@ -305,6 +311,8 @@ var TableComponent = Vue.component("Table", {
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
           }
+          this.chips[i] = await this.contract.chips(this.players[i], this.table_index);
+
           if (this.player_names[i] == null) {
             let name = await this.token.players(this.players[i]);
             if (name != '') {
@@ -378,6 +386,37 @@ var TableComponent = Vue.component("Table", {
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount], "Submiting turn");
       console.log('playHand', ret);
     },
+    winnerAnimation: async function () {
+      const defaults = {
+        spread: 360,
+        ticks: 50,
+        gravity: 0,
+        decay: 0.94,
+        startVelocity: 30,
+        shapes: ["star"],
+        colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+      };
+
+      let shoot = function() {
+        confetti({
+          ...defaults,
+          particleCount: 40,
+          scalar: 1.2,
+          shapes: ["star"],
+        });
+
+        confetti({
+          ...defaults,
+          particleCount: 10,
+          scalar: 0.75,
+          shapes: ["circle"],
+        });
+      }
+
+      setTimeout(shoot, 0);
+      setTimeout(shoot, 100);
+      setTimeout(shoot, 200);      
+    }
   },
 });
 </script>

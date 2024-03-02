@@ -148,6 +148,10 @@ button {
   filter: drop-shadow(4px 4px 3px #333);
   white-space: nowrap;
 }
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
 button a {
   color: #FEE931;
   text-decoration: none;
@@ -180,6 +184,9 @@ button a {
                   Gimme some fish!
                 </button>
               </form>
+              <p>
+                If you don't have gas tokens yet you can get them <a href="https://faucet.testnet.oasis.dev/">here</a>
+              </p>
             </div>
 
             <h2>Open Tables</h2>
@@ -270,7 +277,7 @@ button a {
             </div>
 
             <div v-if="error != null"
-              class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+              class="error">
               <div class="bg-white p-8 rounded-lg">
                 <h1 class="text-2xl font-bold text-red-500">Error</h1>
                 <p class="text-lg text-red-500">
@@ -314,12 +321,6 @@ var NewGameComponent = Vue.component("NewGame", {
     try {
       await Init(this);
 
-      let player_name = await this.token.players(this.account);
-      if (player_name != '') {
-        this.player_name = ethers.toUtf8String(player_name);
-      }
-
-      this.balance = await this.token.balanceOf(this.account);
       this.contract.on([null], async (event) => {
         console.log('event', event);
         this.update();
@@ -328,11 +329,23 @@ var NewGameComponent = Vue.component("NewGame", {
     } catch (e) {
       console.log('create ERR', e);
     }
+    confetti({
+  particleCount: 100,
+  spread: 70,
+  origin: { y: 0.6 },
+});
   },
   methods: {
     update: async function () {
       console.log("update");
       try {
+        let player_name = await this.token.players(this.account);
+        if (player_name != '') {
+          this.player_name = ethers.toUtf8String(player_name);
+        }
+
+        this.balance = await this.token.balanceOf(this.account);
+
         let totalTables = await this.contract.totalTables();
         let tables = [];
         for (let i = 0; i < totalTables; i++) {
