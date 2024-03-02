@@ -52,6 +52,7 @@ h1 {
   font-style: normal;
   font-size: 52px;
   color: #ffc909;
+  margin: 10px;
   -webkit-text-stroke: 2px #ab8134;
   text-shadow: 2px 2px 6px black;
 }
@@ -142,6 +143,10 @@ button {
   border-radius: 8px;
   filter: drop-shadow(4px 4px 3px #333);
 }
+button a {
+  color: #FEE931;
+  text-decoration: none;
+}
 </style>
   
 <template id="new_game">
@@ -150,7 +155,8 @@ button {
       <div class="rapper">
         <div class="landingTable">
           <div class="felt">
-
+            
+            <img :src="'./assets/img/fishChip.png'">
             <h1>Denver Hide'em</h1>
 
             <p v-if="balance != 0" class="balanceBox">
@@ -225,7 +231,7 @@ button {
                   <td v-if="table.chips > 0">
                     <button>
                       <router-link :to="'/table/' + table.index">
-                        Go to Table
+                        go to table
                       </router-link>
                     </button>
                   </td>

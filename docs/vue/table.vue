@@ -52,8 +52,7 @@
   }
 
   .communityCards {
-    width: 500px;
-    height: 120px;
+    height: 100px;
     border: 1px double yellow;
     border-radius: 8px;
     text-align: center;
@@ -70,13 +69,6 @@
     height: 100px;
   }
 
-  <!-- .opponent, .player { -->
-  <!--   width: 200px; -->
-  <!--   height: 200px; -->
-  <!-- } -->
-  .opponent div {
-  }
-  
   .card {
     text-align: center;
     display: inline-block;
