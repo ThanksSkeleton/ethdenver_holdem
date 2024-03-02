@@ -219,6 +219,21 @@
           </button>
         </div>
       </div>
+
+      <div v-if="winmsg != null"
+        class="error">
+        <div class="bg-white p-8 rounded-lg">
+          <h1 class="text-2xl font-bold text-red-500">You Won</h1>
+          <p class="text-lg text-red-500">
+            <% winmsg %>
+          </p>
+          <button v-on:click="winmsg = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -241,6 +256,7 @@ var TableComponent = Vue.component("Table", {
   props: { table_index: { default: 0 } },
   data: () => {
     return {
+      winmsg: null,
       communityCards: [],
       player_index: 0,
       highestChip: 0,
@@ -251,7 +267,6 @@ var TableComponent = Vue.component("Table", {
       spinner: false,
       raiseAmount: 0,
       account: "loading",
-      chips: "loading",
       table: "loading",
       balance: "0",
       table: "loading",
@@ -307,11 +322,18 @@ var TableComponent = Vue.component("Table", {
         console.log('players', this.players);
 
         for (let i = 0; i < this.players.length; i++) {
-          console.log('player', i, this.players[i], this.account);
+          let chips = await this.contract.chips(this.players[i], this.table_index);
+
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
+            if (chips != 0 && chips > this.chips[i]) {
+              this.winmsg = 'You won ' + (chips - this.chips[i]) + ' FISH';
+              this.winnerAnimation();
+            } 
           }
-          this.chips[i] = await this.contract.chips(this.players[i], this.table_index);
+
+          this.chips[i] = chips;
+
 
           if (this.player_names[i] == null) {
             let name = await this.token.players(this.players[i]);
@@ -321,27 +343,24 @@ var TableComponent = Vue.component("Table", {
           }
         }
         
-        if (this.cards[0] == "eth_back") {
-          let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
-          let salt = await GenerateSalt(this.provider, this.account, this.table_index);
-          if (salt == null) {
-            this.error = 'salt is null';
-            this.updating = false;
-            return;
-          }
-          this.cards = [];
-          for (let i = 0; i < cards.length; i++) {
-            let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
-            card = this.numToCard(card);
-            this.cards.push(card);
-          }
+        let cards = await this.contract.encryptedPlayerCards(this.account, this.table_index, this.table.totalHands);
+        let salt = await GenerateSalt(this.provider, this.account, this.table_index);
+        if (salt == null) {
+          this.error = 'salt is null';
+          this.updating = false;
+          return;
+        }
+        this.cards = [];
+        for (let i = 0; i < cards.length; i++) {
+          let card = HashDecryptCard(salt, this.table_index, this.table.totalHands, cards[i]);
+          card = this.numToCard(card);
+          this.cards.push(card);
         }
 
         let { turn, highestChip } = await this.contract.bettingRounds(this.table_index, this.table.currentRound);
         console.log("bettingRounds", turn, Number(turn), highestChip)
         this.isMyTurn = this.players[turn].toLowerCase() == this.account.toLowerCase();
         this.highestChip = Number(highestChip);
-        console.log('highestChip', this.highestChip);
         let bettingRoundChips = await this.contract.bettingRoundChips(this.table_index, this.table.currentRound);
         if (bettingRoundChips.length == this.players.length) {
           let newBettingRoundChips = [];
@@ -350,7 +369,6 @@ var TableComponent = Vue.component("Table", {
           }
           this.bettingRoundChips = newBettingRoundChips;
         }
-        console.log('bettingRoundChips', this.bettingRoundChips);
 
         let valid = true;
         let l = this.communityCards.length;

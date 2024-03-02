@@ -163,11 +163,6 @@ async function TryTx(component, fun, args, msg) {
     ret = await tx.wait();
     console.log('tryTx ret', ret);
     component.update();
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });    
   } catch (e) {
     console.log('tryTx ERR', e);
     if (e.reason) {
