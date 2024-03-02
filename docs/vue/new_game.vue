@@ -132,6 +132,11 @@ table tbody {
   background-color: rgba(0,0,0,.1);
 }
 
+td button {
+  margin: 0;
+  padding: 6px 12px;
+}
+
 button {
   font-family: "Playfair Display", serif;
   background-color: #195318;
@@ -147,6 +152,9 @@ button {
   border-radius: 8px;
   filter: drop-shadow(4px 4px 3px #333);
   white-space: nowrap;
+}
+button:hover, button a:hover {
+  background-color: green;
 }
 button:disabled {
   background-color: gray;
@@ -198,7 +206,7 @@ button a {
                   <th scope="col">Players</th>
                   <th scope="col">Big Blind</th>
                   <th scope="col">
-                    <span class="sr-only">Edit</span>
+                    <span class="sr-only">Status</span>
                   </th>
                 </tr>
               </thead>
@@ -266,7 +274,7 @@ button a {
               The Decentralized Dealers, a bunch of degen decentralized dudes that like building private, dapps.
             </p>
             <img
-              style="width: 180px; margin-left: -74px; margin-top: -54px; margin-bottom: -100px;"
+              style="width: 180px; margin-left: -112px; margin-top: -24px; margin-bottom: -80px;"
               :src="'./assets/img/chip_orange.png'"
             >
 
