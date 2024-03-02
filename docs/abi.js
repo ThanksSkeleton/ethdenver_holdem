@@ -67,7 +67,7 @@ async function GenerateSalt(provider, account, num) {
 }
 
 async function PokerContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function playHand(uint256 tableId, uint8 action, uint256 raiseAmount)",
         "function withdrawChips(uint256 amount, uint256 tableId)",
@@ -89,7 +89,7 @@ async function PokerContract(provider) {
 }
 
 async function SecretPokerContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function buyIn(uint256 tableId, uint256 amount, uint256 salt)",
     ];
@@ -99,7 +99,7 @@ async function SecretPokerContract(provider) {
 }
 
 async function TokenContract(provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(provider);
     let abi = [
         "function mint(address, uint256)",
         "function mintOnce(bytes)",
@@ -163,6 +163,11 @@ async function TryTx(component, fun, args, msg) {
     ret = await tx.wait();
     console.log('tryTx ret', ret);
     component.update();
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    });    
   } catch (e) {
     console.log('tryTx ERR', e);
     if (e.reason) {

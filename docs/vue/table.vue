@@ -202,16 +202,20 @@
         <% spinner %>
       </div>
 
-      <div v-if="error != null" class="">
-        <h1>Error</h1>
-        <p class="text-lg text-red-500">
-          <% error %>
-        </p>
-        <button v-on:click="error = null">
-          Close
-        </button>
+      <div v-if="error != null"
+        class="error">
+        <div class="bg-white p-8 rounded-lg">
+          <h1 class="text-2xl font-bold text-red-500">Error</h1>
+          <p class="text-lg text-red-500">
+            <% error %>
+          </p>
+          <button v-on:click="error = null"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button">
+            Close
+          </button>
+        </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -378,6 +382,37 @@ var TableComponent = Vue.component("Table", {
       let ret = await TryTx(this, this.contract.playHand, [this.table_index, action, raiseAmount], "Submiting turn");
       console.log('playHand', ret);
     },
+    winnerAnimation: async function () {
+      const defaults = {
+        spread: 360,
+        ticks: 50,
+        gravity: 0,
+        decay: 0.94,
+        startVelocity: 30,
+        shapes: ["star"],
+        colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+      };
+
+      let shoot = function() {
+        confetti({
+          ...defaults,
+          particleCount: 40,
+          scalar: 1.2,
+          shapes: ["star"],
+        });
+
+        confetti({
+          ...defaults,
+          particleCount: 10,
+          scalar: 0.75,
+          shapes: ["circle"],
+        });
+      }
+
+      setTimeout(shoot, 0);
+      setTimeout(shoot, 100);
+      setTimeout(shoot, 200);      
+    }
   },
 });
 </script>
