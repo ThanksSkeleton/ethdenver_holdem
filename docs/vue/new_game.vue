@@ -198,7 +198,7 @@ button a {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="table in tables" v-if="table.state >= 0">
+                <tr v-for="table in tables" v-if="table.member || (table.players.length < table.maxPlayers)">
                   <td>
                     <% table.index %>
                   </td>
