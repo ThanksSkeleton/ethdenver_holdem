@@ -28,7 +28,8 @@
     padding-left: 40px;
     text-align: left;
     margin-bottom: -44px;
- 4}
+  }
+  
   .tableHeader h4 {
     display: block;
     color: white;
@@ -139,7 +140,7 @@
               </br>
               Bet: <% bettingRoundChips[i] %> Fish
               </br>
-              Stack: n Fish
+              Stack: <% chips[i] %> Fish
             </p>
           </div>
         </div>
@@ -159,9 +160,11 @@
           </div>
           <div class ="cover">
             <p>
-              You: <% player_names[this.player_index] %>
+              You: <% player_names[player_index] %>
               </br>
-              Bet: <% bettingRoundChips[this.player_index] %>
+              Bet: <% bettingRoundChips[player_index] %>
+              </br>
+              Stack: <% chips[player_index] %> Fish
             </p>
           </div>
         </div>
@@ -241,6 +244,7 @@ var TableComponent = Vue.component("Table", {
       communityCards: [],
       player_index: 0,
       highestChip: 0,
+      chips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       bettingRoundChips: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       isMyTurn: false,
       error: null,
@@ -292,14 +296,12 @@ var TableComponent = Vue.component("Table", {
       this.updating = true;
       console.log("update");
       try {
-        this.chips = await this.contract.chips(this.account, this.table_index);
         let table = await this.contract.tables(this.table_index);
         this.table = {
           index: i, state: table.state,
           totalHands: table.totalHands, currentRound: table.currentRound,
           buyInAmount: table.buyInAmount, maxPlayers: table.maxPlayers, pot: table.pot,
-          bigBlind: table.bigBlind, token: table.token,
-          chips: this.chips
+          bigBlind: table.bigBlind, token: table.token
         };
         this.players = await this.contract.tablePlayers(this.table_index);
         console.log('players', this.players);
@@ -309,6 +311,8 @@ var TableComponent = Vue.component("Table", {
           if (this.players[i].toLowerCase() == this.account.toLowerCase()) {
             this.player_index = i;
           }
+          this.chips[i] = await this.contract.chips(this.players[i], this.table_index);
+
           if (this.player_names[i] == null) {
             let name = await this.token.players(this.players[i]);
             if (name != '') {

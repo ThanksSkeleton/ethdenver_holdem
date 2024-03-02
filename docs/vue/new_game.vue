@@ -143,6 +143,10 @@ button {
   border-radius: 8px;
   filter: drop-shadow(4px 4px 3px #333);
 }
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
 button a {
   color: #FEE931;
   text-decoration: none;
