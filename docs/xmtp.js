@@ -42,15 +42,14 @@ async function initClient() {
 async function listenForMessages() {
   console.log('listening to messages');
   for await (const message of await xmtpClient.conversations.streamAllMessages()) {
-    // if (message.senderAddress === xmtpClient.address) {
-    //   console.log('dont listen to yourself');
-    //   // This message was sent from me
-    //   continue;
-    // }
+    if (message.senderAddress === xmtpClient.address) {
+      console.log(`dont listen to yourself. sender: ${message.senderAddress} xmtpClient: ${xmtpClient.address}`);
+      // This message was sent from me
+      continue;
+    }
     console.log('listening in for loop')
     console.log(message.content);
-    console.log(this.xmtpMsg);
-    this.xmtpMsg + message.content;
+    this.xmtpMsg += message.content;
   }
 }
 async function initConversations(players) {

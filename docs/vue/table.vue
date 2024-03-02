@@ -199,7 +199,7 @@
           <button :disabled='!isMyTurn || highestChip > 0' v-on:click="playHand(ActionCheck, 0)">
             Check
           </button>
-          <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, 0)">
+          <button :disabled='!isMyTurn || highestChip == 0' v-on:click="playHand(ActionCall, raiseAmount)">
             Call (<% highestChip - bettingRoundChips[player_index] %>)
           </button>
           <button :disabled='!isMyTurn' v-on:click="playHand(ActionRaise, raiseAmount)">
