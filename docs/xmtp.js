@@ -54,8 +54,6 @@ async function listenForMessages() {
   }
 }
 async function initConversations(players) {
-    console.log('players amount');
-    console.log(players);
     for (const player of players) {
         // Skip if the player is the xmtpClient itself
         if (player === xmtpClient.address) {
@@ -65,21 +63,6 @@ async function initConversations(players) {
         const conversation = await xmtpClient.conversations.newConversation(player);
         console.log(`conversation made with ${player}`);
         conversations.push(conversation);        
-
-
-        // this logic doesn't work because even if a convo exists, I still need to grab it. however the docs say you need at least 1 msg sent to them.
-        // if (xmtpClient.canMessage(player)) { // && xmtp.contacts.isAllowed(player)
-        //   console.log(`${xmtpClient.address} can already message ${player}. Not creating a new Conversation`);
-        //   const existingConversationsAtTable = await xmtpClient.conversations.list().filter(convo => {
-        //     return players.includes(convo.peerAddress);
-        //   })
-        //   console.log('existing convo grabbed');
-        //   console.log(existingConversationsAtTable)
-        // } else {
-        //   const conversation = await xmtpClient.conversations.newConversation(player);
-        //   console.log('conversation made');
-        //   conversations.push(conversation);
-        // }
     }
     listenForMessages();
     return conversations;
