@@ -309,11 +309,6 @@ var NewGameComponent = Vue.component("NewGame", {
     } catch (e) {
       console.log('create ERR', e);
     }
-    confetti({
-  particleCount: 100,
-  spread: 70,
-  origin: { y: 0.6 },
-});
   },
   methods: {
     update: async function () {
@@ -375,6 +370,11 @@ var NewGameComponent = Vue.component("NewGame", {
         return;
       }
       await TryTx(this, this.token.mintOnce, [ethers.toUtf8Bytes(this.new_player_name)], "Minting you some FISH");
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
     }
   },
 });
